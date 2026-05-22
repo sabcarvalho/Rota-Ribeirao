@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  # Nível de Dados (Persistência)
+  database:
+    image: postgres:15
+    container_name: rr-database
+    environment:
+      POSTGRES_DB: rota_ribeirao_db
+      POSTGRES_USER: user_admin
+      POSTGRES_PASSWORD: password_123
+    ports:
+      - "5432:5432"
+
+  # Nível de Aplicação (Microserviços)
+  places-api:
+    build: ./places-service
+    container_name: rr-places-api
+    depends_on:
+      - database
+    environment:
+      DATABASE_URL: postgresql://user_admin:password_123@database:5432/rota_ribeirao_db
+
+  reviews-api:
+    build: ./reviews-service
+    container_name: rr-reviews-api
+    depends_on:
+      - database
+    environment:
+      DATABASE_URL: postgresql://user_admin:password_123@database:5432/rota_ribeirao_db
+      PLACES_API_URL: http://places-api:8000
+
+  recommendation-api:
+    build: ./recommendation-service
+    container_name: rr-recommendation-api
+    depends_on:
+      - database
+
+  # Nível de Interface
+  frontend:
+    build: ./frontend
+    container_name: rr-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      VITE_API_URL: http://localhost:8000 # URL para acesso externo via browser
+    depends_on:
+      - places-api
+      - reviews-api
