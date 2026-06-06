@@ -10,7 +10,7 @@ const EMPTY_FORM = {
 }
 
 export default function Admin() {
-  const { user }                  = useAuth()
+  const { user, loading}                  = useAuth()
   const navigate                  = useNavigate()
   const [places, setPlaces]       = useState(MOCK_PLACES)
   const [form, setForm]           = useState(EMPTY_FORM)
@@ -19,10 +19,21 @@ export default function Admin() {
   const [successMsg, setSuccessMsg] = useState('')
 
   useEffect(() => {
-    if (!user?.isAdmin) navigate('/')
-  }, [user, navigate])
+    // SÓ redireciona se o loading já terminou E o usuário realmente NÃO for admin
+    if (!loading && !user?.isAdmin) {
+      navigate('/')
+    }
+  }, [user, loading, navigate])
 
-  if (!user?.isAdmin) return null
+  // Enquanto estiver checando o token, mostra uma tela amigável
+  if (loading) {
+    return <div className="loading-screen">Verificando permissões...</div>
+  }
+
+  // Se o loading acabou e não é admin, barra a renderização da página
+  if (!user?.isAdmin) {
+    return null
+  }
 
   function handleChange(e) {
     const { name, value, type, checked } = e.target

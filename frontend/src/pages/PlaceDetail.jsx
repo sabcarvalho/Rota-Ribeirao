@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getPlaceById, addReview } from '../services/placesService'
+import { getPlaceById, addReview, toggleFavoritePlace, getFavorites, getStorageCache,setStorageCache } from '../services/placesService'
 import { useAuth } from '../context/AuthContext'
 import './PlaceDetail.css'
 
@@ -21,7 +21,6 @@ export default function PlaceDetail() {
   const [place, setPlace]       = useState(null)
   const [loading, setLoading]   = useState(true)
   const [isFav, setIsFav]       = useState(false)
-
   const [reviewRating, setReviewRating]   = useState(5)
   const [reviewComment, setReviewComment] = useState('')
   const [sending, setSending]             = useState(false)
@@ -29,21 +28,49 @@ export default function PlaceDetail() {
 
   useEffect(() => {
     getPlaceById(id)
-      .then(data => {
-        if (!data) { navigate('/'); return }
-        setPlace(data)
-        setReviews(data.reviews || [])
-        const favs = JSON.parse(localStorage.getItem('favorites') || '[]')
-        setIsFav(favs.includes(data.id))
+      .then(async (data) => {
+      if (!data) { navigate('/'); return }
+      setPlace(data)
+      setReviews(data.reviews || [])
+      
+      let favs = getStorageCache('favorites')
+  
+      if (favs === null) {
+        try {
+          favs = await getFavorites() 
+          
+          setStorageCache('favorites', favs, 30)
+        } catch (error) {
+          console.error("Erro ao buscar favoritos do banco, assumindo vazio:", error)
+          favs = []
+        }
+      }
+      setIsFav(favs.includes(data.id))
       })
       .finally(() => setLoading(false))
   }, [id, navigate])
 
-  function toggleFavorite() {
-    const favs = JSON.parse(localStorage.getItem('favorites') || '[]')
-    const next = isFav ? favs.filter(f => f !== place.id) : [...favs, place.id]
-    localStorage.setItem('favorites', JSON.stringify(next))
-    setIsFav(!isFav)
+  async function toggleFavorite() {
+    const estadoAnterior = isFav
+    let favs = getStorageCache('favorites')
+    try {
+      if (favs === null) {
+        favs = await getFavorites()
+      }
+      const next = isFav ? favs.filter(f => f !== place.id) : [...favs, place.id]
+      localStorage.setItem('favorites', JSON.stringify(next))
+      setIsFav(!isFav)
+      
+      await toggleFavoritePlace(place.id, !isFav)
+      setStorageCache('favorites', next, 30)
+      
+    } catch (error) {
+      console.log(error)
+      setIsFav(estadoAnterior)
+      localStorage.setItem('favorites', JSON.stringify(favs))
+      alert("Não foi possível salvar seu favorito. Tente novamente.")
+      
+    }
   }
 
   async function handleReviewSubmit(e) {
@@ -81,7 +108,7 @@ export default function PlaceDetail() {
   return (
     <div className="page-wrapper">
       <div className="detail-hero" style={{
-        backgroundImage: `linear-gradient(rgba(26,26,46,0.7),rgba(26,26,46,0.85)), url(https://picsum.photos/seed/${place.id}/1200/500)`
+        backgroundImage: `linear-gradient(rgba(26,26,46,0.7),rgba(26,26,46,0.85)), url(${place.image})`
       }}>
         <div className="container">
           <button className="detail-back" onClick={() => navigate(-1)}>

@@ -1,28 +1,32 @@
-version: '3.8'
-
 services:
+  admin-module:
+    build: ./admin-module
+    container_name: rr-admin-api
+    ports:
+      - "8003:8000"
+    env_file:
+      - .env
   places-api:
     build: ./places-service
     container_name: rr-places-api
     ports:
       - "8000:8000"
-    environment:
-      DATABASE_URL: ${DATABASE_URL_RENDER}
+    env_file:
+      - .env
 
   reviews-api:
     build: ./reviews-service
     container_name: rr-reviews-api
     ports:
       - "8001:8000"
-    environment:
-      DATABASE_URL: ${DATABASE_URL_RENDER}
-      PLACES_API_URL: ${PLACES_API_URL}
+    env_file:
+      - .env
 
   recommendation-api:
     build: ./recommendation-service
     container_name: rr-recommendation-api
-    environment:
-      DATABASE_URL: ${DATABASE_URL_RENDER}
+    env_file:
+      - .env
     ports:
       - "8002:8000"
 
@@ -30,7 +34,7 @@ services:
     build: ./frontend
     container_name: rr-frontend
     ports:
-      - "3000:3000"
+      - "5173:5173"
     depends_on:
       - places-api
       - reviews-api

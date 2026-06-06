@@ -1,10 +1,25 @@
 import { api } from './api'
+import { jwtDecode } from 'jwt-decode'
 
 export async function login(email, password) {
   try {
-    const data = await api.post('/auth/login', { email, password })
-    if (data.token) localStorage.setItem('token', data.token)
-    return data.user
+    const data = await api.post('admin', '/auth/login', {email: email, senha: password })
+    const token = data.access_token || data.token 
+    if (token) {
+      localStorage.setItem('token', token)
+      
+      const decoded = jwtDecode(token)
+      console.log("Dados de dentro do JWT:", decoded)
+      
+      const user = {
+        id: decoded.sub,              
+        isAdmin: decoded.admin || false
+      }
+      
+      return user
+    }
+    
+    throw new Error('Token não recebido do servidor')
   } catch {
     // Mock para desenvolvimento
     if (email === 'admin@rota.com' && password === '123456') {

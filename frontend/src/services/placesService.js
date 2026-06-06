@@ -102,46 +102,136 @@ export const MOCK_PLACES = [
   },
 ]
 
+function mapPlaceToFrontend(backendPlace) {
+  if (!backendPlace) return null
+
+  return {
+    id: backendPlace.id,
+    name: backendPlace.nome,                               
+    category: (backendPlace.categoria || '').toLowerCase(), 
+    image: backendPlace.image_url, 
+    address: `${backendPlace.rua}, ${backendPlace.numero_rua} - ${backendPlace.bairro}, CEP: ${backendPlace.cep}` || 'Endereço não informado', 
+    description: backendPlace.descricao,
+    rating: backendPlace.nota, 
+    priceLevel: backendPlace.preco,
+    eventDate: backendPlace.data_inicio,
+    occasion: backendPlace.tags.split(",") || []
+  }
+}
+
 export async function getPlaces(filters = {}) {
   try {
     const params = new URLSearchParams()
-    if (filters.category)   params.set('category',    filters.category)
-    if (filters.priceLevel) params.set('price_level', filters.priceLevel)
-    if (filters.occasion)   params.set('occasion',    filters.occasion)
-    if (filters.minRating)  params.set('min_rating',  filters.minRating)
+    
+    if (filters.name)      params.set('nome',      filters.name)
+    if (filters.type)      params.set('tipo',      filters.type)
+    if (filters.category)  params.set('categoria', filters.category)
+    if (filters.tags)      params.set('tags',      filters.tags)
 
-    return await api.get(`/places?${params}`)
-  } catch {
-    // Fallback para dados mock enquanto o backend não está disponível
+    const response = await api.get('places', `/search_place?${params}`)
+    
+    return response.map(mapPlaceToFrontend)
+  } catch (error) {
+    console.warn("Usando fallback de dados mockados para listagem de lugares", error)
+    
     let places = [...MOCK_PLACES]
-    if (filters.category)   places = places.filter(p => p.category === filters.category)
+    if (filters.category)  places = places.filter(p => p.category === filters.category)
     if (filters.priceLevel) places = places.filter(p => p.priceLevel <= Number(filters.priceLevel))
-    if (filters.occasion)   places = places.filter(p => p.occasion.includes(filters.occasion))
-    if (filters.minRating)  places = places.filter(p => p.rating >= Number(filters.minRating))
+    if (filters.occasion)  places = places.filter(p => p.occasion.includes(filters.occasion))
+    if (filters.minRating) places = places.filter(p => p.rating >= Number(filters.minRating))
     return places
   }
 }
 
 export async function getPlaceById(id) {
+  if (!id || id === 'undefined') {
+    console.error("getPlaceById foi chamada com um ID inválido:", id)
+    return null
+  }
+
   try {
-    return await api.get(`/places/${id}`)
-  } catch {
+    const response = await api.get('places', `/search_place/?ids=${id}`)
+    return response.length > 0 ? mapPlaceToFrontend(response[0]) : null
+
+  } catch (error) {
+    console.error("Erro ao buscar lugar por ID, usando Mock", error)
     return MOCK_PLACES.find(p => p.id === Number(id)) || null
   }
 }
 
+export async function toggleFavoritePlace(id_place, isFav) {
+  try {
+    let response = null
+    if(isFav){
+      response = await api.post('admin', `/places/favoritar/${id_place}`, {})
+    }else{
+      response = await api.delete('admin', `/places/delete_favorite/place/${id_place}`)
+    }
+    
+    return response
+
+  } catch (error) {
+    console.error("Erro ao favoritar o lugar: ", error)
+    throw error
+  }
+}
+
+export async function getFavorites() {
+  try {
+    const response = await api.get('admin', `/places/favoritos`)
+    let apenasIds = []
+    if(response)
+      apenasIds = response.map(item => item.id_lugar)
+
+    setStorageCache("favorites", apenasIds, 30)
+    return apenasIds
+  } catch (error) {
+    console.error("Erro ao buscar os favoritos ", error)
+    throw error
+  }
+}
+
+export function setStorageCache(key, value, ttlInMinutes) {
+  const now = new Date()
+  
+  const cacheData = {
+    value: value,
+    expiry: now.getTime() + (ttlInMinutes * 60 * 1000) 
+  }
+  
+  localStorage.setItem(key, JSON.stringify(cacheData))
+}
+
+export function getStorageCache(key) {
+  const cacheRaw = localStorage.getItem(key)
+  
+  if (!cacheRaw) return null
+  
+  const cacheData = JSON.parse(cacheRaw)
+  const now = new Date()
+
+  if (!cacheData) return null
+  
+  if (now.getTime() > cacheData.expiry) {
+    localStorage.removeItem(key)
+    return null
+  }
+  
+  return cacheData.value
+}
+
 export async function createPlace(data) {
-  return api.post('/places', data)
+  return api.post('places', '/add_place', data)
 }
 
 export async function deletePlace(id) {
-  return api.delete(`/places/${id}`)
+  return api.delete('places', `/remover_lugar/${id}`)
 }
 
 export async function addReview(placeId, data) {
   try {
-    return await api.post(`/places/${placeId}/reviews`, data)
-  } catch {
+    return await api.post('reviews', `/places/${placeId}/reviews`, data)
+  } catch (error) {
     return { ...data, id: Date.now(), date: new Date().toISOString().split('T')[0] }
   }
 }
