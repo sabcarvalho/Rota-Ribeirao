@@ -1,18 +1,18 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { MOCK_PLACES, createPlace, deletePlace } from '../services/placesService'
+import { MOCK_PLACES, createPlace, deletePlace, getPlaces } from '../services/placesService'
 import './Admin.css'
 
 const EMPTY_FORM = {
-  name: '', category: 'restaurante', address: '',
-  rating: 4.0, priceLevel: 2, occasion: [], description: '',
+  name: '', category: 'restaurante', street: '', number: '', district: '', cep: '',
+  rating: 4.0, priceLevel: 2, occasion: [], description: '', type: 'fixo', image: ' ',
 }
 
 export default function Admin() {
   const { user, loading}                  = useAuth()
   const navigate                  = useNavigate()
-  const [places, setPlaces]       = useState(MOCK_PLACES)
+  const [places, setPlaces]       = useState([])
   const [form, setForm]           = useState(EMPTY_FORM)
   const [showForm, setShowForm]   = useState(false)
   const [saving, setSaving]       = useState(false)
@@ -22,8 +22,14 @@ export default function Admin() {
     // SÓ redireciona se o loading já terminou E o usuário realmente NÃO for admin
     if (!loading && !user?.isAdmin) {
       navigate('/')
+      console.log(user)
     }
-  }, [user, loading, navigate])
+    getPlaces({category: '', priceLevel: '', occasion: '', minRating: '',})
+      .then(data => {
+        setPlaces(data)
+      })
+      .catch(err => console.error("Erro ao buscar lugares:", err))
+  }, [user, navigate])
 
   // Enquanto estiver checando o token, mostra uma tela amigável
   if (loading) {
@@ -52,24 +58,38 @@ export default function Admin() {
   async function handleSubmit(e) {
     e.preventDefault()
     setSaving(true)
+    const backupPlaces = [...places]
     try {
-      const newPlace = await createPlace(form).catch(() => ({
-        ...form, id: Date.now(),
-      }))
+      const newPlace = await createPlace(form)
       setPlaces(prev => [...prev, newPlace])
       setForm(EMPTY_FORM)
       setShowForm(false)
       setSuccessMsg('Lugar adicionado com sucesso!')
       setTimeout(() => setSuccessMsg(''), 3000)
-    } finally {
+    }catch (error){
+      console.error("Não foi possível remover o lugar do servidor:", error)
+      setPlaces(backupPlaces)
+      alert("Erro ao adicionar lugar. Tente novamente.")
+    }finally {
       setSaving(false)
     }
   }
 
   async function handleDelete(id) {
     if (!confirm('Remover este lugar?')) return
-    await deletePlace(id).catch(() => {})
-    setPlaces(prev => prev.filter(p => p.id !== id))
+  
+    const backupPlaces = [...places]
+    const nextPlaces = places.filter(p => p.id !== id)
+
+    setPlaces(nextPlaces)
+
+    try {
+      await deletePlace(id)
+    } catch (error) {
+      console.error("Não foi possível remover o lugar do servidor:", error)
+      setPlaces(backupPlaces)
+      alert("Erro ao remover lugar. Tente novamente.")
+    }
   }
 
   const OCCASIONS_LIST = ['familia', 'encontro', 'comemoracao', 'amigos']
@@ -117,9 +137,26 @@ export default function Admin() {
                 </div>
               </div>
 
-              <div className="form-group">
-                <label>Endereço</label>
-                <input name="address" value={form.address} onChange={handleChange} required placeholder="Rua, número - Bairro" />
+              <div className="admin-form__row">
+                <div className="form-group" style={{ flex: 3 }}>
+                  <label>Rua / Avenida</label>
+                  <input name="street" value={form.street || ''} onChange={handleChange} required placeholder="Ex: Av. Professor João Fiúsa" />
+                </div>
+                <div className="form-group" style={{ flex: 1 }}>
+                  <label>Número</label>
+                  <input name="number" value={form.number || ''} onChange={handleChange} required placeholder="Ex: 1200" />
+                </div>
+              </div>
+
+              <div className="admin-form__row">
+                <div className="form-group">
+                  <label>Bairro</label>
+                  <input name="district" value={form.district || ''} onChange={handleChange} required placeholder="Ex: Jardim Botânico" />
+                </div>
+                <div className="form-group">
+                  <label>CEP</label>
+                  <input name="cep" value={form.cep || ''} onChange={handleChange} required placeholder="Ex: 14020-000" />
+                </div>
               </div>
 
               <div className="admin-form__row">
@@ -130,6 +167,20 @@ export default function Admin() {
                 <div className="form-group">
                   <label>Faixa de preço (1-4)</label>
                   <input name="priceLevel" type="number" min="1" max="4" value={form.priceLevel} onChange={handleChange} />
+                </div>
+              </div>
+
+              <div className="admin-form__row">
+                <div className="form-group">
+                  <label>Tipo</label>
+                  <select name="type" value={form.type} onChange={handleChange}>
+                    <option value="fixo">Fixo</option>
+                    <option value="evento">Evento</option>
+                  </select>
+                </div>
+                <div className="form-group" style={{ flex: 1 }}>
+                  <label>URL da Imagem</label>
+                  <input name="image" value={form.image || ''} onChange={handleChange} placeholder="Ex: https://linkdaimagem.com/foto.jpg" />
                 </div>
               </div>
 

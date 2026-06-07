@@ -45,7 +45,8 @@ export default function PlaceDetail() {
           favs = []
         }
       }
-      setIsFav(favs.includes(data.id))
+      if(favs)
+        setIsFav(favs.includes(data.id))
       })
       .finally(() => setLoading(false))
   }, [id, navigate])

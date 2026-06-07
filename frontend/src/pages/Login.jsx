@@ -18,6 +18,7 @@ export default function Login() {
     setLoading(true)
     try {
       const user = await login(email, password)
+      console.log(user)
       setUser(user)
       navigate('/')
     } catch (err) {

@@ -15,6 +15,7 @@ async function request(service, path, options = {}) {
   const token = localStorage.getItem('token')
   
   const cleanPath = path.startsWith('/') ? path : `/${path}`
+
   
   const res = await fetch(`${baseUrl}${cleanPath}`, {
     headers: {
@@ -26,8 +27,14 @@ async function request(service, path, options = {}) {
   })
 
   if (!res.ok) {
-    const error = await res.json().catch(() => ({ detail: 'Erro na requisição' }))
-    throw new Error(error.detail || 'Erro na requisição')
+    const errorBody = await res.json().catch(() => ({ detail: 'Erro na requisição' }))
+    
+    const error = new Error(errorBody.detail || 'Erro na requisição')
+    
+    error.status = res.status
+    error.detail = errorBody.detail
+    
+    throw error
   }
 
   if (res.status === 204) return null

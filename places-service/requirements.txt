@@ -12,3 +12,4 @@ passlib[bcrypt]
 python-jose[cryptography]
 argon2-cffi
 argon2-cffi-bindings
+requests

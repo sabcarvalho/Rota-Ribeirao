@@ -1,42 +1,42 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
 
 
 class CriacaoLugarSchema(BaseModel):
-    nome: str
-    rua: str
-    numero_rua: str
-    bairro: str
+    name: str
+    street: str
+    number: str
+    district: str
     cep: str
-    categoria: str
-    tags: str
-    preco: int
-    nota: float
-    descricao: str
-    tipo: str
-    image_url: Optional[str]
-    data_inicio: Optional[datetime]
-    data_fim: Optional[datetime]
+    category: str
+    occasion: str
+    priceLevel: int
+    rating: float
+    description: str
+    type: str
+    image: Optional[str] = None
+    eventStartDate: Optional[datetime] = None
+    eventFinishDate: Optional[datetime] = None
     class Config:
         from_attributes = True
 
 class LugarResponseSchema(BaseModel):
     id: int
-    nome: str
-    rua: str
-    numero_rua: str
-    bairro: str
+    name: str = Field(validation_alias="nome")
+    street: str = Field(validation_alias="rua")
+    number: str = Field(validation_alias="numero_rua")
+    district: str = Field(validation_alias="bairro")
     cep: str
-    categoria: str
-    tags: str
-    preco: int
-    nota: float
-    descricao: str
-    tipo: str
-    image_url: Optional[str] = None
-    data_inicio: Optional[datetime] = None
-    data_fim: Optional[datetime] = None
+    category: str = Field(validation_alias="categoria")
+    occasion: str = Field(validation_alias="tags")
+    priceLevel: int = Field(validation_alias="preco")
+    rating: float = Field(validation_alias="nota")
+    description: str = Field(validation_alias="descricao")
+    type: str = Field(validation_alias="tipo")
+    image: Optional[str] = Field(default=None, validation_alias="image_url")
+    eventStartDate: Optional[datetime] = Field(default=None, validation_alias="data_inicio")
+    eventFinishDate: Optional[datetime] = Field(default=None, validation_alias="data_fim")
 
     class Config:
         from_attributes = True

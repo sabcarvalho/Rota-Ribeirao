@@ -41,6 +41,22 @@ class Lugar(Base):
     tipo = Column(String(20)) # 'fixo' ou 'evento'
     image_url = Column(String(500), nullable=True) #link para a imagem do lugar
 
+    def __init__(self, nome, rua, numero_rua, bairro, cep, categoria,
+                 tags, preco, nota, descricao, tipo, image_url):
+        self.nome = nome
+        self.rua = rua
+        self.numero_rua = numero_rua
+        self.bairro = bairro
+        self.cep = cep
+        self.categoria = categoria
+        self.tags = tags
+        self.preco = preco
+        self.nota = nota
+        self.descricao = descricao
+        self.tipo = tipo
+        self.image_url = image_url
+        self.ativo = True
+
     @property
     def _tags(self) -> list[str]:
         if not self.tags:

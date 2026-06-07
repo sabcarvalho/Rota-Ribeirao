@@ -18,8 +18,21 @@ def verificar_token(token: str = Depends(oauth2_schema), session: Session = Depe
         dict_info = jwt.decode(token, SECRET_KEY, ALGORITHM)
         id_usuario = dict_info.get("sub")
         usuario = session.query(Usuario).filter(Usuario.id == id_usuario).first()
-        if not usuario:
-            raise HTTPException(status_code=401, detail="Acesso Invalido")
+        if not usuario or not usuario.ativo:
+            raise HTTPException(status_code=401, detail={"code": "INVALID_ACCESS", "message": "Usuario inválido"})
         return usuario
     except JWTError:
-        raise HTTPException(status_code=401, detail="Acesso Negado, verifique a validade do token")
+        raise HTTPException(status_code=401, detail={"code": "TOKEN_EXPIRED", "message": "Acesso Negado, verifique a validade do token"})
+
+def verificar_refresh_token(token: str, session: Session = Depends(get_session)):
+    try:
+        dict_info = jwt.decode(token, SECRET_KEY, ALGORITHM)
+        id_usuario = dict_info.get("sub")
+        
+        usuario = session.query(Usuario).filter(Usuario.id == id_usuario).first()
+        if not usuario or not usuario.ativo:
+            raise HTTPException(status_code=401, detail={"code": "INVALID_ACCESS", "message": "Usuario inválido"})
+            
+        return usuario
+    except JWTError:
+        raise HTTPException(status_code=401, detail={"code": "TOKEN_EXPIRED", "message": "Acesso Negado, verifique a validade do token"})

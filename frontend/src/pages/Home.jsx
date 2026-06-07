@@ -29,6 +29,7 @@ export default function Home() {
         setFavorites([])
       } finally {
         setLoading(false)
+        setFavorites([]) 
       }
     }
     setLoading(true)
@@ -71,9 +72,8 @@ export default function Home() {
       const response = await toggleFavoritePlace(id, true)
       
     } catch (error) {
-      setFavorites(prev => {
-        localStorage.setItem('favorites', JSON.stringify(favs))
-      })
+      localStorage.setItem('favorites', JSON.stringify(favs))
+      setFavorites(favorites)
       alert("Não foi possível salvar seu favorito. Tente novamente.")
     }
   }

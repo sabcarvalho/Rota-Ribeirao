@@ -2,16 +2,21 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional
 
 class UsuarioSchema(BaseModel):
-    nome: str
+    name: str
     email: EmailStr
-    senha: str
-    ativo: Optional[bool]
+    password: str
+    active: Optional[bool] = True
     
     class Config:
         from_attributes = True
 
 class LoginSchema(BaseModel):
     email: EmailStr
-    senha: str
+    password: str
+    class Config:
+        from_attributes = True
+
+class RefreshTokenSchema(BaseModel):
+    refresh_token: str
     class Config:
         from_attributes = True

@@ -18,10 +18,10 @@ def verificar_token(token: str = Depends(oauth2_schema)):
         return payload
 
     except JWTError:
-        raise HTTPException(status_code=401,detail="Token inválido")
+        raise HTTPException(status_code=401,detail={"code": "TOKEN_EXPIRED", "message": "Acesso Negado, verifique a validade do token"})
 
 def verificar_admin(payload: dict = Depends(verificar_token)):
-    if not payload.get("admin", False):
+    if not payload.get("isAdmin", False):
         raise HTTPException(status_code=403,detail="Apenas administradores" )
 
     return payload
