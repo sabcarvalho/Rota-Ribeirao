@@ -1,6 +1,6 @@
 # Rota Ribeirão
 
-Projeto de Sistemas Distribuídos e Desenvolvimento Web[cite: 5, 42].
+Projeto de Sistemas Distribuídos e Desenvolvimento Web.
 
 **Documentação Adicional:** [Google Drive](https://drive.google.com/drive/folders/1PGBj1kU57g-7MBAPuFkLIryFSL5kE5k5?usp=sharing)
 
@@ -39,8 +39,8 @@ Para rodar todo o ecossistema distribuído na sua máquina, você precisará do 
 
 1. Clone o repositório:
    ```bash
-   git clone [https://github.com/seu-usuario/rota-ribeirao.git](https://github.com/seu-usuario/rota-ribeirao.git)
-   cd rota-ribeirao
+   git clone https://github.com/sabcarvalho/Rota-Ribeirao.git
+   cd Rota-Ribeirao
 
 2. Suba os serviços:
    ```bash
