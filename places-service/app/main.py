@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException, Query, Request
-from app.schemas import CriacaoLugarSchema, LugarResponseSchema
+from app.schemas import CriacaoLugarSchema, LugarResponseSchema, UpdateRatingSchema
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session, joinedload, selectinload
@@ -228,8 +228,23 @@ def delete_favorite(id_place: int, request: Request, usuario: dict = Depends(ver
         response = requests.delete(url_limpa, headers=headers_internos) #manda deletar todos os favoritos referentes ao local q esta sendo excluido
         
         if response.status_code == 200:
+            # Remove as avaliações no microserviço reviews-api (Chamada síncrona)
+            try:
+                url_reviews = f"http://reviews-api:8000/internal/reviews/place/{id_place}"
+                response_reviews = requests.delete(url_reviews)
+                
+                # Permite 404 (caso não existam avaliações prévias a serem deletadas)
+                if not response_reviews.ok and response_reviews.status_code != 404:
+                    session.rollback()
+                    raise HTTPException(status_code=response_reviews.status_code, 
+                                        detail="Não foi possível sincronizar a exclusão com o módulo de avaliações")
+            except requests.exceptions.RequestException as e:
+                session.rollback()
+                raise HTTPException(status_code=503, 
+                                    detail="Módulo de avaliações indisponível. Operação cancelada por segurança.")
+            
             session.commit()
-            return {"detail": "Lugar e favoritos removidos com sucesso"}
+            return {"detail": "Lugar, favoritos e avaliações removidos com sucesso"}
             
         else:
             session.rollback()
@@ -240,6 +255,19 @@ def delete_favorite(id_place: int, request: Request, usuario: dict = Depends(ver
         session.rollback() #se algo acontecer, volta tudo
         raise HTTPException(status_code=503, 
                             detail="Módulo de administração indisponível. Operação cancelada por segurança.")
-    
-    
 
+@app.put("/internal/places/{id_place}/rating")
+def update_place_rating(id_place: int, rating_data: UpdateRatingSchema, session: Session = Depends(get_session)):
+    """
+    Rota interna para os outros microserviços atualizarem a nota e a quantidade de reviews de um lugar.
+    """
+    lugar = session.query(Lugar).filter(Lugar.id == id_place).first()
+    if not lugar:
+        raise HTTPException(status_code=404, detail="Lugar não encontrado")
+    
+    lugar.nota = rating_data.nota
+    lugar.qntd_reviews = rating_data.qntd_reviews
+    session.commit()
+    return {"detail": "Nota e quantidade de reviews atualizadas com sucesso"}
+    
+    
