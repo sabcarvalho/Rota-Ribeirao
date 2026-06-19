@@ -42,7 +42,7 @@ export default function Home() {
 
         if (user) {
           const dadosFavoritos = resultados[1] //favoritos
-          setFavorites(dadosFavoritos)
+          setFavorites(dadosFavoritos || [])
         } else {
           setFavorites([]) // sem usuario, sem favoritos
         }
@@ -157,7 +157,7 @@ export default function Home() {
                 <PlaceCard
                   key={place.id}
                   place={place}
-                  isFavorite={favorites.includes(place.id)}
+                  isFavorite={favorites?.includes(place.id)}
                   onToggleFavorite={toggleFavorite}
                 />
               ))}

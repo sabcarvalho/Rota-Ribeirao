@@ -65,7 +65,7 @@ export async function refreshToken(){
   } catch (error){
     if (error.detail?.code === "TOKEN_EXPIRED") {
       logout()
-      throw new TokenExpiredError("Refresh Token expirado.")
+      throw new Error("Refresh Token expirado.")
     } else{
       // Mock para desenvolvimento
       const user = { id: Date.now(), name, email, isAdmin: false }

@@ -47,7 +47,6 @@ def favorite_place(id_lugar: int, usuario: Usuario = Depends(verificar_token), s
         )
         if buscar_fav:
             return {
-                "id": buscar_fav.id,
                 "detail": "Favorito já adicionado."
             }
         else:
