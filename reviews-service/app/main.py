@@ -16,8 +16,8 @@ if env_path.exists():
 else:
     load_dotenv()
 
-FRONTEND_ORIGIN = os.getenv("FRONT_END_URL", "http://localhost:3000")
-PLACES_SERVICE_URL = os.getenv("PLACES_SERVICE_URL", "http://places-api:8000")
+FRONTEND_ORIGIN = os.getenv("FRONT_END_URL", "http://localhost:3000").rstrip('/') # Garante que não haja barra no final
+PLACES_SERVICE_URL = os.getenv("PLACES_SERVICE_URL", "http://places-api:8000").rstrip('/') # Garante que não haja barra no final
 
 app = FastAPI(title="Rota Ribeirão - Reviews Service")
 

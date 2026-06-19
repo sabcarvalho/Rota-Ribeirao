@@ -10,10 +10,11 @@ class ReviewResponseSchema(BaseModel):
     id: int
     id_lugar: int
     id_usuario: int
-    nome_autor: str
-    nota: int
-    comentario: Optional[str]
-    data_criacao: datetime
+    nome_autor: str = Field(alias="author")
+    nota: int = Field(alias="rating")
+    comentario: Optional[str] = Field(default=None, alias="comment")
+    data_criacao: datetime = Field(alias="date")
 
     class Config:
         from_attributes = True
+        populate_by_name = True

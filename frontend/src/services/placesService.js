@@ -374,11 +374,3 @@ export async function updateStatusPlace(id, newStatus) {
     }
   }
 }
-
-export async function addReview(placeId, data) {
-  try {
-    return await api.post('reviews', `/places/${placeId}/reviews`, data)
-  } catch (error) {
-    return { ...data, id: Date.now(), date: new Date().toISOString().split('T')[0] }
-  }
-}

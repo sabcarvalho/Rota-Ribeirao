@@ -1,4 +1,4 @@
-class TokenExpiredError extends Error{
+export class TokenExpiredError extends Error{
     constructor(message){
         super(message);
 
@@ -6,7 +6,7 @@ class TokenExpiredError extends Error{
     }
 }
 
-class UnautorizedError extends Error{
+export class UnautorizedError extends Error{
     constructor(message){
         super(message);
 
