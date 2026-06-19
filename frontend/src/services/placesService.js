@@ -116,13 +116,8 @@ function mapPlaceToFrontend(backendPlace) {
     description: backendPlace.description,
     rating: backendPlace.rating, 
     priceLevel: backendPlace.priceLevel,
-<<<<<<< HEAD
     eventDate: backendPlace.event ? backendPlace.event.eventStartDate.slice(0, 10) : '',
     occasion: backendPlace.occasion.split(",") || [],
-=======
-    eventDate: backendPlace.evento ? backendPlace.evento.data_inicio.slice(0, 10) : '',
-    occasion: backendPlace.occasion ? backendPlace.occasion.split(",") : [],
->>>>>>> 29e6d7ea3a68d8f8437c4430d3a3a870ff561c44
     active: backendPlace.active
   }
 }
