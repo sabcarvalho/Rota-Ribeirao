@@ -1,32 +1,78 @@
 import { useState, useEffect } from 'react'
 import PlaceCard from '../components/PlaceCard'
+import { useAuth } from '../context/AuthContext'
 import FilterBar from '../components/FilterBar'
-import { getPlaces } from '../services/placesService'
+import { getPlaces, getFavorites, getStorageCache, setStorageCache, toggleFavoritePlace} from '../services/placesService'
 import './Home.css'
 
 export default function Home() {
+  const {user} = useAuth()
   const [places, setPlaces]         = useState([])
   const [loading, setLoading]       = useState(true)
-  const [favorites, setFavorites]   = useState(() => {
-    try { return JSON.parse(localStorage.getItem('favorites') || '[]') } catch { return [] }
-  })
+  const [favorites, setFavorites]   = useState([])
   const [filters, setFilters] = useState({
     category: '', priceLevel: '', occasion: '', minRating: '',
   })
 
   useEffect(() => {
-    setLoading(true)
-    getPlaces(filters)
-      .then(setPlaces)
-      .finally(() => setLoading(false))
-  }, [filters])
+    async function carregarDadosHome() {
+      setLoading(true)
+      try {
+        const promessas = [getPlaces(filters)]
 
-  function toggleFavorite(id) {
+        if (user) {
+          console.log("Usuário logado. Preparando carga de favoritos...")
+          
+          const obterFavoritos = async () => {
+            let ids = getStorageCache('favorites')
+            if (ids === null) {
+              console.log("Cache expirou ou não existe. Buscando do banco...")
+              ids = await getFavorites()
+            }
+            return ids;
+          };
+
+          promessas.push(obterFavoritos())
+        }
+
+        const resultados = await Promise.all(promessas)
+        
+        const dadosLugares = resultados[0] //o primeiro sempre eh o getPlaces
+        setPlaces(dadosLugares);
+
+        if (user) {
+          const dadosFavoritos = resultados[1] //favoritos
+          setFavorites(dadosFavoritos)
+        } else {
+          setFavorites([]) // sem usuario, sem favoritos
+        }
+      } catch (error) {
+        console.error("Erro ao carregar os dados da pagina inicial:", error)
+        if (!user) 
+          setFavorites([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    carregarDadosHome();
+  }, [filters, user])
+
+  async function toggleFavorite(id) {
+    let favs = favorites
     setFavorites(prev => {
       const next = prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id]
-      localStorage.setItem('favorites', JSON.stringify(next))
+      setStorageCache("favorites", next, 30)
       return next
     })
+    try {
+      const response = await toggleFavoritePlace(id, true)
+      
+    } catch (error) {
+      setStorageCache("favorites", favs, 30)
+      setFavorites(favorites)
+      console.log(error)
+      alert("Não foi possível salvar seu favorito. Tente novamente.")
+    }
   }
 
   return (

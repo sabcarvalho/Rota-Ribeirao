@@ -2,23 +2,64 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import PlaceCard from '../components/PlaceCard'
-import { MOCK_PLACES } from '../services/placesService'
+import { getPlaceById, toggleFavoritePlace, getFavorites, getStorageCache,setStorageCache} from '../services/placesService'
 import './Favorites.css'
 
 export default function Favorites() {
   const { user } = useAuth()
-  const [favorites, setFavorites] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('favorites') || '[]') } catch { return [] }
-  })
+  const [favoritesIds, setFavoritesIds] = useState([]) 
+  const [favoritePlaces, setFavoritePlaces] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  const favoritePlaces = MOCK_PLACES.filter(p => favorites.includes(p.id))
+  useEffect(() => {
+    async function carregarFavoritos() {
+      try {
+        let ids = getStorageCache('favorites')
 
-  function removeFavorite(id) {
-    setFavorites(prev => {
-      const next = prev.filter(f => f !== id)
-      localStorage.setItem('favorites', JSON.stringify(next))
-      return next
-    })
+        if (ids === null) {
+          console.log("Cache expirou ou não existe. Buscando do banco...")
+          ids = await getFavorites()
+        }
+        setFavoritesIds(ids)
+
+        if (ids.length > 0) {
+          const lugares = await getPlaceById(ids)
+          if(Array.isArray(lugares))
+            setFavoritePlaces(lugares)
+          else
+            setFavoritePlaces([lugares])
+          console.log(lugares)
+        }
+      } catch (error) {
+        console.error("Erro ao carregar tela de favoritos:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    carregarFavoritos()
+  }, [])
+
+  async function handleRemoveFavorite(idLugar) {
+    const backupIds = [...favoritesIds]
+    const backupPlaces = [...favoritePlaces]
+
+    const nextIds = favoritesIds.filter(id => id !== idLugar)
+    const nextPlaces = favoritePlaces.filter(p => p.id !== idLugar)
+
+    setFavoritesIds(nextIds)
+    setFavoritePlaces(nextPlaces)
+    setStorageCache('favorites', nextIds, 30) 
+
+    try {
+      await toggleFavoritePlace(idLugar, false)
+    } catch (error) {
+      console.error("Não foi possível remover o favorito do servidor:", error)
+      setFavoritesIds(backupIds)
+      setFavoritePlaces(backupPlaces)
+      setStorageCache('favorites', backupIds, 30)
+      alert("Erro ao remover favorito. Tente novamente.")
+    }
   }
 
   if (!user) {
@@ -66,7 +107,7 @@ export default function Favorites() {
                 key={place.id}
                 place={place}
                 isFavorite={true}
-                onToggleFavorite={removeFavorite}
+                onToggleFavorite={handleRemoveFavorite}
               />
             ))}
           </div>

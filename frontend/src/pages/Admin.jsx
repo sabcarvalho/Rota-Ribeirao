@@ -1,28 +1,45 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { MOCK_PLACES, createPlace, deletePlace } from '../services/placesService'
+import { createPlace, deletePlace, getPlacesAdmin, updateStatusPlace } from '../services/placesService'
 import './Admin.css'
 
 const EMPTY_FORM = {
-  name: '', category: 'restaurante', address: '',
-  rating: 4.0, priceLevel: 2, occasion: [], description: '',
+  name: '', category: 'restaurante', street: '', number: '', district: '', cep: '',
+  rating: 4.0, priceLevel: 2, occasion: [], description: '', type: 'fixo', image: '',
+  eventStartDate: '', eventFinishDate: '',
 }
 
 export default function Admin() {
-  const { user }                  = useAuth()
+  const { user, loading}                  = useAuth()
   const navigate                  = useNavigate()
-  const [places, setPlaces]       = useState(MOCK_PLACES)
+  const [places, setPlaces]       = useState([])
   const [form, setForm]           = useState(EMPTY_FORM)
   const [showForm, setShowForm]   = useState(false)
   const [saving, setSaving]       = useState(false)
   const [successMsg, setSuccessMsg] = useState('')
 
   useEffect(() => {
-    if (!user?.isAdmin) navigate('/')
+    if (user === undefined) return;
+    if (!loading && !user?.isAdmin) {
+      navigate('/')
+      console.log(user)
+    }
+    getPlacesAdmin()
+      .then(data => {
+        setPlaces(data)
+      })
+      .catch(err => console.error("Erro ao buscar lugares:", err))
   }, [user, navigate])
 
-  if (!user?.isAdmin) return null
+  if (loading) {
+    return <div className="loading-screen">Verificando permissões...</div>
+  }
+
+  // Se o loading acabou e não é admin, barra a renderização da página
+  if (!user?.isAdmin) {
+    return null
+  }
 
   function handleChange(e) {
     const { name, value, type, checked } = e.target
@@ -37,28 +54,78 @@ export default function Admin() {
       setForm(f => ({ ...f, [name]: type === 'number' ? Number(value) : value }))
     }
   }
+  const handleToggleActive = async (id, currentStatus) => {
+  try {
+    const novoStatus = !currentStatus;
+
+    setPlaces(prevPlaces => 
+      prevPlaces.map(p => p.id === id ? { ...p, active: novoStatus } : p)
+    );
+
+    await updateStatusPlace(id, novoStatus)
+
+  } catch (error) {
+    console.error("Erro ao alterar o status do lugar:", error);
+    setPlaces(prevPlaces => 
+      prevPlaces.map(p => p.id === id ? { ...p, active: currentStatus } : p)
+    );
+    alert("Não foi possível alterar o status do lugar.");
+  }
+};
 
   async function handleSubmit(e) {
     e.preventDefault()
     setSaving(true)
+    
+    const payload = { ...form }
+    if (payload.type === 'evento') {
+    
+      if (!payload.eventStartDate || !payload.eventFinishDate) {
+        alert("Por favor, preencha as datas de início e término do evento.");
+        return; 
+      }
+
+      const dataInicio = new Date(payload.eventStartDate);
+      const dataFim = new Date(payload.eventFinishDate);
+
+      if (dataInicio > dataFim) {
+        alert("Erro: A data de início não pode ser posterior à data de término!");
+        return;
+      }
+      if(payload.category != "evento"){
+        payload.category = "evento"
+      }
+    }
     try {
-      const newPlace = await createPlace(form).catch(() => ({
-        ...form, id: Date.now(),
-      }))
+      const newPlace = await createPlace(payload)
       setPlaces(prev => [...prev, newPlace])
       setForm(EMPTY_FORM)
       setShowForm(false)
       setSuccessMsg('Lugar adicionado com sucesso!')
       setTimeout(() => setSuccessMsg(''), 3000)
-    } finally {
+    }catch (error){
+      console.error("Não foi possível adicionar o lugar no servidor:", error)
+      alert("Erro ao adicionar lugar. Tente novamente.")
+    }finally {
       setSaving(false)
     }
   }
 
   async function handleDelete(id) {
     if (!confirm('Remover este lugar?')) return
-    await deletePlace(id).catch(() => {})
-    setPlaces(prev => prev.filter(p => p.id !== id))
+  
+    const backupPlaces = [...places]
+    const nextPlaces = places.filter(p => p.id !== id)
+
+    setPlaces(nextPlaces)
+
+    try {
+      await deletePlace(id)
+    } catch (error) {
+      console.error("Não foi possível remover o lugar do servidor:", error)
+      setPlaces(backupPlaces)
+      alert("Erro ao remover lugar. Tente novamente.")
+    }
   }
 
   const OCCASIONS_LIST = ['familia', 'encontro', 'comemoracao', 'amigos']
@@ -106,9 +173,26 @@ export default function Admin() {
                 </div>
               </div>
 
-              <div className="form-group">
-                <label>Endereço</label>
-                <input name="address" value={form.address} onChange={handleChange} required placeholder="Rua, número - Bairro" />
+              <div className="admin-form__row">
+                <div className="form-group" style={{ flex: 3 }}>
+                  <label>Rua / Avenida</label>
+                  <input name="street" value={form.street || ''} onChange={handleChange} required placeholder="Ex: Av. Professor João Fiúsa" />
+                </div>
+                <div className="form-group" style={{ flex: 1 }}>
+                  <label>Número</label>
+                  <input name="number" value={form.number || ''} onChange={handleChange} required placeholder="Ex: 1200" />
+                </div>
+              </div>
+
+              <div className="admin-form__row">
+                <div className="form-group">
+                  <label>Bairro</label>
+                  <input name="district" value={form.district || ''} onChange={handleChange} required placeholder="Ex: Jardim Botânico" />
+                </div>
+                <div className="form-group">
+                  <label>CEP</label>
+                  <input name="cep" value={form.cep || ''} onChange={handleChange} required placeholder="Ex: 14020-000" />
+                </div>
               </div>
 
               <div className="admin-form__row">
@@ -122,6 +206,39 @@ export default function Admin() {
                 </div>
               </div>
 
+              <div className="admin-form__row">
+                <div className="form-group">
+                  <label>Tipo</label>
+                  <select name="type" value={form.type} onChange={(e) => {handleChange(e);
+                        if (e.target.value === 'fixo') {
+                          setForm(prev => ({
+                            ...prev,
+                            eventStartDate: '',
+                            eventFinishDate: ''
+                          }));
+                        }
+                      }}>
+                    <option value="fixo">Fixo</option>
+                    <option value="evento">Evento</option>
+                  </select>
+                </div>
+                <div className="form-group" style={{ flex: 1 }}>
+                  <label>URL da Imagem</label>
+                  <input name="image" value={form.image || ''} onChange={handleChange} placeholder="Ex: https://linkdaimagem.com/foto.jpg" />
+                </div>
+              </div>
+              {form.type === 'evento' && (
+              <div className="admin-form__row">
+                <div className="form-group">
+                  <label>Data de Início (Evento)</label>
+                  <input name="eventStartDate" type="date" value={form.eventStartDate || ''} onChange={handleChange} min="2026-01-01" max="2030-12-31"  />
+                </div>
+                <div className="form-group" style={{ flex: 1 }}>
+                  <label>Data de Fim (Evento)</label>
+                  <input name="eventFinishDate" type="date" value={form.eventFinishDate || ''} onChange={handleChange} min="2026-01-01" max="2030-12-31" />
+                </div>
+              </div>
+              )}
               <div className="form-group">
                 <label>Ocasiões</label>
                 <div className="admin-checkboxes">
@@ -173,21 +290,32 @@ export default function Admin() {
               </thead>
               <tbody>
                 {places.map(p => (
-                  <tr key={p.id}>
+                  <tr key={p.id} className={!p.active ? "admin-table-row admin-table-row--disabled" : "admin-table-row"}>
                     <td>
                       <Link to={`/place/${p.id}`} className="admin-place-link">
                         {p.name}
                       </Link>
+                      {!p.active && (
+                        <span className="admin-place-status">
+                          (Desativado)
+                        </span>
+                      )}
                     </td>
                     <td>
                       <span className="badge badge--orange">{p.category}</span>
                     </td>
                     <td>
-                      <span className="stars">{'★'.repeat(Math.round(p.rating))}</span>
+                      <span className="stars">{'★'.repeat(Math.round(p.rating || 0))}</span>
                       {' '}{p.rating?.toFixed(1)}
                     </td>
                     <td>{'$'.repeat(p.priceLevel)}</td>
                     <td>
+                      <button
+                        className={p.active ? "admin-status-btn admin-status-btn--deactivate" : "admin-status-btn admin-status-btn--activate"}
+                        onClick={() => handleToggleActive(p.id, p.active)}>
+                        <i className={p.active ? "fa-solid fa-eye-slash" : "fa-solid fa-eye"}></i>{' '}
+                        {p.active ? "Desativar" : "Ativar"}
+                      </button>
                       <button
                         className="admin-delete-btn"
                         onClick={() => handleDelete(p.id)}

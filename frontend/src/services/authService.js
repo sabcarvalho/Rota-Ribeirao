@@ -1,10 +1,26 @@
 import { api } from './api'
+import { jwtDecode } from 'jwt-decode'
 
 export async function login(email, password) {
   try {
-    const data = await api.post('/auth/login', { email, password })
-    if (data.token) localStorage.setItem('token', data.token)
-    return data.user
+    const data = await api.post('admin', '/auth/login', {email: email, password: password })
+    const token = data.access_token || data.token 
+    if (token) {
+      localStorage.setItem('token', token)
+      localStorage.setItem("refreshToken", data.refresh_token)
+      
+      const decoded = jwtDecode(token)
+      console.log("Dados de dentro do JWT:", decoded)
+      
+      const user = {
+        id: decoded.sub,
+        name: decoded.name || 'Admin',
+        email: decoded.email,
+        isAdmin: decoded.isAdmin === 'True' || decoded.isAdmin === true,
+      }
+      return user
+    }
+    throw new Error('Token não recebido do servidor')
   } catch {
     // Mock para desenvolvimento
     if (email === 'admin@rota.com' && password === '123456') {
@@ -24,8 +40,8 @@ export async function login(email, password) {
 
 export async function register(name, email, password) {
   try {
-    const data = await api.post('/auth/register', { name, email, password })
-    if (data.token) localStorage.setItem('token', data.token)
+    const data = await api.post('admin', '/auth/register', {name: name, email: email, password: password })
+    if (data.access_token) localStorage.setItem('token', data.access_token)
     return data.user
   } catch {
     // Mock para desenvolvimento
@@ -37,6 +53,26 @@ export async function register(name, email, password) {
 
 export function logout() {
   localStorage.removeItem('token')
+  localStorage.removeItem("refreshToken")
+}
+
+export async function refreshToken(){
+  try {
+    const r_token = localStorage.getItem('refreshToken')
+    const data = await api.post('admin', '/auth/refresh', {refresh_token: r_token })
+    
+    localStorage.setItem('token', data.access_token)
+  } catch (error){
+    if (error.detail?.code === "TOKEN_EXPIRED") {
+      logout()
+      throw new TokenExpiredError("Refresh Token expirado.")
+    } else{
+      // Mock para desenvolvimento
+      const user = { id: Date.now(), name, email, isAdmin: false }
+      localStorage.setItem('token', `mock-token-${Date.now()}`)
+    }
+    
+  }
 }
 
 export function getStoredToken() {

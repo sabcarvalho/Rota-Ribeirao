@@ -159,3 +159,56 @@
     grid-template-columns: 1fr;
   }
 }
+
+.admin-table-row--disabled {
+  background-color: #f9f9f9;
+}
+
+.admin-table-row--disabled .badge,
+.admin-table-row--disabled .stars {
+  opacity: 0.5;
+}
+
+.admin-place-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.admin-table-row--disabled .admin-place-link {
+  color: #9c9c9c;
+  text-decoration: line-through; 
+}
+
+.admin-place-status {
+  color: #d9534f;
+  font-size: 0.85rem;
+  margin-left: 8px;
+  font-weight: bold;
+}
+
+.admin-status-btn {
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-right: 8px;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+.admin-status-btn--deactivate {
+  background-color: #f0ad4e;
+}
+
+.admin-status-btn--deactivate:hover {
+  background-color: #ec971f;
+}
+
+.admin-status-btn--activate {
+  background-color: #5cb85c;
+}
+
+.admin-status-btn--activate:hover {
+  background-color: #449d44;
+}

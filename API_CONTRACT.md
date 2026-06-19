@@ -33,7 +33,8 @@ Login de usuário.
 **Response 200:**
 ```json
 {
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   "user": {
     "id": 1,
     "name": "João Silva",
@@ -60,7 +61,8 @@ Cadastro de novo usuário.
 {
   "name": "João Silva",
   "email": "usuario@email.com",
-  "password": "senha123"
+  "password": "senha123",
+  "active": [opcional] true
 }
 ```
 
@@ -80,28 +82,93 @@ Cadastro de novo usuário.
 **Response 400 (email já cadastrado):**
 ```json
 {
-  "detail": "Email já está em uso"
+  "detail": "Email do usuario ja cadastrado"
 }
 ```
+---
+
+## Favoritos
+
+### GET `/places/favorites`
+Retorna todos os lugares favoritados pelo usuário logado.
+
+**Response 200:**
+```json
+[
+  {
+    "id": favorito.id,
+    "place_id": lugar_id,
+  }
+]
+```
+---
+
+### POST `/places/add_favorite/:id_lugar`
+Adiciona um favorito na tabela Favorito de um dado usuário logado, recebendo o id do local sendo favoritado.
+
+**Response 200:**
+```json
+[
+  {
+    "id": favorito.id,
+    "detail": "Favorito adicionado com sucesso.",
+  }
+]
+```
+
+---
+
+### DELETE `/places/delete_favorite/place/:id_lugar`
+Deleta um Favorito de um dado usuário logado, referente ao id do local passado.
+
+**Response 200:**
+```json
+[
+  {
+    "detail": "Favorito removido com sucesso.",
+  }
+]
+```
+
+---
+
+### DELETE `/places/delete_favorite/place/all/:id_lugar`
+Deleta todos os favoritos vinculados ao id do local passado. Apenas realizada por administradores.
+
+**Response 200:**
+```json
+[
+  {
+    "detail": "Limpeza concluída. {linhas_deletadas} favoritos removidos.",
+    "linhas_afetadas": list, 
+    "linhas_afetadas": linhas_deletadas
+  }
+]
+```
+
 
 ---
 
 ## Lugares
 
-### GET `/places`
+### GET `/search_place`
 Lista todos os lugares com filtros opcionais via query params.
 
 **Query params (todos opcionais):**
 | Param | Tipo | Exemplo | Descrição |
 |---|---|---|---|
+| `name` | string | `Nome do lugar` | Filtra por nome |
 | `category` | string | `restaurante` | Filtra por categoria |
 | `price_level` | number | `2` | Filtra por preço máximo (1–4) |
 | `occasion` | string | `familia` | Filtra por ocasião |
 | `min_rating` | number | `4.0` | Filtra por nota mínima |
+| `event_type` | string | `fixo` | Filtra se é fixo ou evento |
 
 **Categorias válidas:** `restaurante`, `bar`, `cafe`, `evento`, `mercado`
 
 **Ocasiões válidas:** `familia`, `encontro`, `comemoracao`, `amigos`
+
+**Tipos válidos:** `fixo`, `evento`
 
 **Response 200:**
 ```json
@@ -109,49 +176,53 @@ Lista todos os lugares com filtros opcionais via query params.
   {
     "id": 1,
     "name": "Restaurante Sinhá Moça",
+    "street": "Av. Costábile Romano",
+    "number": "2201",
+    "district": "Ribeirânia",
+    "cep": "14025-020",
     "category": "restaurante",
-    "address": "Av. Costábile Romano, 2201 - Ribeirânia",
-    "rating": 4.7,
+    "occasion": "encontro,comemoracao,amigos",
     "priceLevel": 3,
-    "occasion": ["familia", "comemoracao"],
+    "rating": 4.7,
     "description": "Tradicional restaurante de culinária brasileira...",
-    "image": "https://url-da-imagem.com/foto.jpg",
-    "eventDate": null
+    "type": "fixo",
+    "image": "https://dlnews.com.br/imagens_noticias/img_1104072020173149.jpg",
+    "event": null,
+    "active": true
   }
 ]
 
-> `eventDate` é preenchido **apenas para eventos** (category = "evento"), no formato `YYYY-MM-DD`. Para outras categorias, enviar `null`.
+> `event` é preenchido **apenas para eventos** (event_type = "evento"), no formato `YYYY-MM-DD`. Para outras categorias, enviar `null`.
 ```
 
 > `image` pode ser null — o frontend usa uma imagem placeholder automática nesse caso.
 
 ---
 
-### GET `/places/:id`
-Retorna detalhes de um lugar específico, incluindo as avaliações.
+### GET `/search_place/ids`
+Retorna detalhes de todos os lugares passados na requisicao.
 
 **Response 200:**
 ```json
-{
-  "id": 1,
-  "name": "Restaurante Sinhá Moça",
-  "category": "restaurante",
-  "address": "Av. Costábile Romano, 2201 - Ribeirânia",
-  "rating": 4.7,
-  "priceLevel": 3,
-  "occasion": ["familia", "comemoracao"],
-  "description": "Tradicional restaurante de culinária brasileira...",
-  "image": "https://url-da-imagem.com/foto.jpg",
-  "reviews": [
-    {
-      "id": 1,
-      "author": "Maria S.",
-      "rating": 5,
-      "comment": "Comida incrível!",
-      "date": "2025-05-10"
-    }
-  ]
-}
+[
+  {
+    "id": 1,
+    "name": "Restaurante Sinhá Moça",
+    "street": "Av. Costábile Romano",
+    "number": "2201",
+    "district": "Ribeirânia",
+    "cep": "14025-020",
+    "category": "restaurante",
+    "occasion": "encontro,comemoracao,amigos",
+    "priceLevel": 3,
+    "rating": 4.7,
+    "description": "Tradicional restaurante de culinária brasileira...",
+    "type": "fixo",
+    "image": "https://dlnews.com.br/imagens_noticias/img_1104072020173149.jpg",
+    "event": null,
+    "active": true
+  }
+]
 ```
 
 **Response 404:**
@@ -163,7 +234,42 @@ Retorna detalhes de um lugar específico, incluindo as avaliações.
 
 ---
 
-### POST `/places`
+### GET `/admin/search_place/`
+Retorna detalhes de todos os lugares, mesmos aqueles desativados. **Requer token de admin.**
+
+**Response 200:**
+```json
+[
+  {
+    "id": 1,
+    "name": "Restaurante Sinhá Moça",
+    "street": "Av. Costábile Romano",
+    "number": "2201",
+    "district": "Ribeirânia",
+    "cep": "14025-020",
+    "category": "restaurante",
+    "occasion": "encontro,comemoracao,amigos",
+    "priceLevel": 3,
+    "rating": 4.7,
+    "description": "Tradicional restaurante de culinária brasileira...",
+    "type": "fixo",
+    "image": "https://dlnews.com.br/imagens_noticias/img_1104072020173149.jpg",
+    "event": null,
+    "active": true
+  }
+]
+```
+
+**Response 404:**
+```json
+{
+  "detail": "Lugar não encontrado"
+}
+```
+
+---
+
+### POST `/add_place`
 Cria um novo lugar. **Requer token de admin.**
 
 **Headers:**
@@ -175,13 +281,19 @@ Authorization: Bearer <token>
 ```json
 {
   "name": "Novo Restaurante",
+  "street": "Rua Exemplo",
+  "number": "100",
+  "district": "Bairro",
+  "cep": "14000-00",
   "category": "restaurante",
-  "address": "Rua Exemplo, 100 - Centro",
-  "rating": 4.0,
+  "occasion": "familia,amigos",
   "priceLevel": 2,
-  "occasion": ["familia", "amigos"],
-  "description": "Descrição do lugar...",
-  "image": "https://url-opcional.com/foto.jpg"
+  "rating": 4.0,
+  "description": "Descrição....",
+  "type": "fixo",
+  "image": "https://url-opcional.com/foto.jpg",
+  "eventStartDate": "2026-06-08T01:04:10.110Z",
+  "eventFinishDate": "2026-06-08T01:04:10.110Z",
 }
 ```
 
@@ -190,6 +302,10 @@ Authorization: Bearer <token>
 {
   "id": 9,
   "name": "Novo Restaurante",
+  "street": "Rua Exemplo",
+  "number": "100",
+  "district": "Bairro",
+  "cep": "14000-00",
   "category": "restaurante",
   ...
 }
@@ -197,7 +313,41 @@ Authorization: Bearer <token>
 
 ---
 
-### DELETE `/places/:id`
+### POST `/deactivate_place/:id`
+Desativa um lugar. **Requer token de admin.**
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Response 200:**
+```json
+{
+  "detail": "Lugar desativado com sucesso"
+}
+```
+
+---
+
+### POST `/ativate_place/:id`
+Ativa um lugar. **Requer token de admin.**
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Response 200:**
+```json
+{
+  "detail": "Lugar ativado com sucesso"
+}
+```
+
+---
+
+### DELETE `/delete_place/:id`
 Remove um lugar. **Requer token de admin.**
 
 **Headers:**
