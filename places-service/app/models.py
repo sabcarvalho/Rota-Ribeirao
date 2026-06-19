@@ -1,5 +1,9 @@
 from sqlalchemy import create_engine, Column, String, Integer, Boolean, Float, Text, ForeignKey, DateTime
 from sqlalchemy.orm import declarative_base, relationship
+from sqlalchemy import create_engine, Column, Integer, Text, DateTime, UniqueConstraint, CheckConstraint
+from sqlalchemy.orm import declarative_base
+from sqlalchemy.sql import text
+import os
 from pathlib import Path
 from dotenv import load_dotenv
 import os
@@ -11,10 +15,12 @@ if env_path.exists():
     load_dotenv(env_path)
 else:
     load_dotenv() #quando rodado em docker, vem automaticamente pelo .env da pasta raiz
+    load_dotenv()
 
 
 db_url = os.getenv("DATABASE_URL") #url do supabase
 
+db_url = os.getenv("DATABASE_URL")
 db = create_engine(db_url)
 
 
@@ -25,7 +31,6 @@ Base = declarative_base()
 class Lugar(Base):
     __tablename__ = "lugares"
     __table_args__ = {"schema": "lugares"}
-
     id = Column("id", Integer, primary_key=True, autoincrement=True)
     nome = Column("nome", String)
     rua = Column("rua", String)
@@ -36,6 +41,7 @@ class Lugar(Base):
     tags = Column("tags", Text)
     preco = Column("preco", Integer)
     nota = Column("nota", Float)
+    qntd_reviews = Column("qntd_reviews", Integer, default=0)
     descricao = Column("descricao", Text)
     ativo = Column("ativo", Boolean, default=True)
     tipo = Column(String(20)) # 'fixo' ou 'evento'
@@ -97,3 +103,18 @@ class Evento(Lugar):
     __mapper_args__ = {
         "polymorphic_identity": "evento",
     }
+
+class Review(Base):
+    __tablename__ = "reviews"
+    __table_args__ = (
+        UniqueConstraint('id_lugar', 'id_usuario', name='uix_lugar_usuario'),
+        CheckConstraint('nota >= 1 AND nota <= 5', name='chk_nota_range'),
+        {"schema": "reviews"}
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    id_lugar = Column(Integer, nullable=False)
+    id_usuario = Column(Integer, nullable=False)
+    nota = Column(Integer, nullable=False)
+    comentario = Column(Text, nullable=True)
+    data_criacao = Column(DateTime, server_default=text('CURRENT_TIMESTAMP'))

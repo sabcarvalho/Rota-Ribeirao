@@ -3,6 +3,10 @@ from typing import Optional
 from datetime import datetime
 
 
+class UpdateRatingSchema(BaseModel):
+    nota: float
+    qntd_reviews: int
+
 class CriacaoLugarSchema(BaseModel):
     name: str
     street: str
@@ -39,6 +43,7 @@ class LugarResponseSchema(BaseModel):
     occasion: str = Field(validation_alias="tags")
     priceLevel: int = Field(validation_alias="preco")
     rating: float = Field(validation_alias="nota")
+    qntd_reviews: int = Field(default=0)
     description: str = Field(validation_alias="descricao")
     type: str = Field(validation_alias="tipo")
     image: Optional[str] = Field(default=None, validation_alias="image_url")

@@ -116,8 +116,13 @@ function mapPlaceToFrontend(backendPlace) {
     description: backendPlace.description,
     rating: backendPlace.rating, 
     priceLevel: backendPlace.priceLevel,
+<<<<<<< HEAD
     eventDate: backendPlace.event ? backendPlace.event.eventStartDate.slice(0, 10) : '',
     occasion: backendPlace.occasion.split(",") || [],
+=======
+    eventDate: backendPlace.evento ? backendPlace.evento.data_inicio.slice(0, 10) : '',
+    occasion: backendPlace.occasion ? backendPlace.occasion.split(",") : [],
+>>>>>>> 29e6d7ea3a68d8f8437c4430d3a3a870ff561c44
     active: backendPlace.active
   }
 }
@@ -212,7 +217,7 @@ export async function toggleFavoritePlace(id_place, isFav) {
   } catch (error) {
     if (error.detail?.code === "TOKEN_EXPIRED") {
       try {
-        const novoToken = await refreshToken(); 
+        await refreshToken(); 
         if(isFav){
           return await api.post('admin', `/places/add_favorite/${id_place}`, {})
         }else{
@@ -307,7 +312,7 @@ export async function createPlace(data) {
     const response = await api.post('places', '/add_place', new_data)
     return response
   } catch (error) {
-    if (error.detail?.code === "TOKEN_EXPIRED") {
+    if (error.status === 401) {
       try {
         await refreshToken(); 
         const response = await api.post('places', '/add_place', new_data)
@@ -327,7 +332,7 @@ export async function deletePlace(id) {
   try {
     return await api.delete('places', `/delete_place/${id}`)
   } catch (error) {
-    if (error.detail?.code === "TOKEN_EXPIRED") {
+    if (error.status === 401) {
       try {
         await refreshToken(); 
         return await api.delete('places', `/delete_place/${id}`)
@@ -348,7 +353,7 @@ export async function updateStatusPlace(id, newStatus) {
     else
       return await api.post('places', `/deactivate_place/${id}`, {})
   } catch (error) {
-    if (error.detail?.code === "TOKEN_EXPIRED") {
+    if (error.status === 401) {
       try {
         await refreshToken(); 
         if(newStatus)
@@ -363,13 +368,5 @@ export async function updateStatusPlace(id, newStatus) {
       console.error("Erro ao deletar o lugar: ", error)
       throw error
     }
-  }
-}
-
-export async function addReview(placeId, data) {
-  try {
-    return await api.post('reviews', `/places/${placeId}/reviews`, data)
-  } catch (error) {
-    return { ...data, id: Date.now(), date: new Date().toISOString().split('T')[0] }
   }
 }

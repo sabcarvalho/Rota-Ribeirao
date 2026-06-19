@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getPlaceById, addReview, toggleFavoritePlace, getFavorites, getStorageCache,setStorageCache } from '../services/placesService'
+import { getPlaceById, toggleFavoritePlace, getFavorites, getStorageCache,setStorageCache } from '../services/placesService'
+import { getPlaceReviews, addReview, calculateNewAverageRating } from '../services/reviewsService'
 import { useAuth } from '../context/AuthContext'
 import './PlaceDetail.css'
 
@@ -20,36 +21,57 @@ export default function PlaceDetail() {
   const { user }                = useAuth()
   const [place, setPlace]       = useState(null)
   const [loading, setLoading]   = useState(true)
+  const [loadingReviews, setLoadingReviews] = useState(true)
   const [isFav, setIsFav]       = useState(false)
   const [reviewRating, setReviewRating]   = useState(5)
   const [reviewComment, setReviewComment] = useState('')
+  const [isAnonymous, setIsAnonymous] = useState(false)
   const [sending, setSending]             = useState(false)
   const [reviews, setReviews]             = useState([])
 
   useEffect(() => {
-    getPlaceById(id)
-      .then(async (data) => {
-      if (!data) { navigate('/'); return }
-      setPlace(data)
-      setReviews(data.reviews || [])
-      
-      let favs = getStorageCache('favorites')
-  
-      if (favs === null) {
-        try {
-          favs = await getFavorites() 
-          
-          setStorageCache('favorites', favs, 30)
-        } catch (error) {
-          console.error("Erro ao buscar favoritos do banco, assumindo vazio:", error)
-          favs = []
+    // Busca dados essenciais
+    async function fetchPlaceDetails() {
+      try {
+        const data = await getPlaceById(id);
+        if (!data) { navigate('/'); return; }
+        
+        setPlace(data);
+        setLoading(false); // Libera o HTML principal
+
+        let favs = getStorageCache('favorites');
+        if (favs === null) {
+          try {
+            favs = await getFavorites();
+            setStorageCache('favorites', favs, 30);
+          } catch (error) {
+            favs = [];
+          }
         }
+        if (favs) setIsFav(favs.includes(data.id));
+
+      } catch (err) {
+        setLoading(false);
       }
-      if(favs)
-        setIsFav(favs.includes(data.id))
-      })
-      .finally(() => setLoading(false))
-  }, [id, navigate])
+    }
+
+    // Busca avaliações de forma independente
+    async function fetchReviews() {
+      try {
+        const reviewsData = await getPlaceReviews(id);
+        setReviews(reviewsData || []);
+      } catch (error) {
+        setReviews([]);
+      } finally {
+        setLoadingReviews(false);
+      }
+    }
+
+    // Executa ambas paralelamente
+    fetchPlaceDetails();
+    fetchReviews();
+    
+  }, [id, navigate]);
 
   async function toggleFavorite() {
     const estadoAnterior = isFav
@@ -79,14 +101,21 @@ export default function PlaceDetail() {
     if (!reviewComment.trim()) return
     setSending(true)
     try {
-      const newReview = await addReview(place.id, {
-        rating: reviewRating,
-        comment: reviewComment,
-        author: user.name,
-      })
+      const payload = { rating: reviewRating, comment: reviewComment, is_anonymous: isAnonymous }
+      const newReview = await addReview(place.id, payload)
+      
+      // Atualização otimista: insere a avaliação e calcula nova nota
       setReviews(prev => [newReview, ...prev])
+      
+      const novaNota = calculateNewAverageRating(place.rating, reviews.length, reviewRating)
+      setPlace(prev => ({ ...prev, rating: novaNota }))
+      
       setReviewComment('')
       setReviewRating(5)
+      setIsAnonymous(false)
+    } catch (error) {
+      console.error("Erro ao enviar avaliação:", error)
+      alert("Erro ao salvar avaliação. Tente novamente.")
     } finally {
       setSending(false)
     }
@@ -101,10 +130,6 @@ export default function PlaceDetail() {
   }
 
   if (!place) return null
-
-  const avgRating = reviews.length
-    ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)
-    : place.rating?.toFixed(1)
 
   return (
     <div className="page-wrapper">
@@ -123,7 +148,7 @@ export default function PlaceDetail() {
             </p>
             <div className="detail-meta">
               <span className="stars">{renderStars(place.rating, '1.1rem')}</span>
-              <strong>{avgRating}</strong>
+              <strong>{place.rating?.toFixed(1) || '0.0'}</strong>
               <span className="detail-reviews-count">({reviews.length} avaliações)</span>
               <span className="detail-price">
                 {Array.from({ length: 4 }, (_, i) => (
@@ -158,7 +183,9 @@ export default function PlaceDetail() {
                 {reviews.length > 0 && <span className="reviews-count">{reviews.length}</span>}
               </h2>
 
-              {reviews.length === 0 ? (
+              {loadingReviews ? (
+                <p className="loading-reviews"><i className="fa-solid fa-spinner fa-spin"></i> Carregando avaliações...</p>
+              ) : reviews.length === 0 ? (
                 <p className="no-reviews">Ainda não há avaliações. Seja o primeiro!</p>
               ) : (
                 <div className="reviews-list">
@@ -210,6 +237,16 @@ export default function PlaceDetail() {
                       required
                     />
                   </div>
+                  <div className="form-group checkbox-group">
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={isAnonymous}
+                        onChange={e => setIsAnonymous(e.target.checked)}
+                      />{' '}
+                      Publicar de forma anônima
+                    </label>
+                  </div>
                   <button type="submit" className="btn btn--primary" disabled={sending}>
                     {sending ? 'Enviando...' : 'Publicar avaliação'}
                   </button>
@@ -239,7 +276,7 @@ export default function PlaceDetail() {
                 <li><i className="fa-solid fa-dollar-sign"></i> <strong>Preço:</strong>
                   {' '}{'$'.repeat(place.priceLevel)}
                 </li>
-                <li><i className="fa-solid fa-star"></i> <strong>Nota:</strong> {avgRating} / 5</li>
+                <li><i className="fa-solid fa-star"></i> <strong>Nota:</strong> {place.rating?.toFixed(1) || '0.0'} / 5</li>
                 <li>
                   <i className="fa-solid fa-users"></i> <strong>Ocasiões:</strong>
                   <div className="detail-occasions">

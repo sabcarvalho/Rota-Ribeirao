@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { MOCK_PLACES, createPlace, deletePlace, getPlaces, getPlacesAdmin, updateStatusPlace } from '../services/placesService'
+import { createPlace, deletePlace, getPlacesAdmin, updateStatusPlace } from '../services/placesService'
 import './Admin.css'
 
 const EMPTY_FORM = {
@@ -58,11 +58,11 @@ export default function Admin() {
   try {
     const novoStatus = !currentStatus;
 
-    await updateStatusPlace(id, novoStatus)
-    
     setPlaces(prevPlaces => 
       prevPlaces.map(p => p.id === id ? { ...p, active: novoStatus } : p)
     );
+
+    await updateStatusPlace(id, novoStatus)
 
   } catch (error) {
     console.error("Erro ao alterar o status do lugar:", error);
@@ -76,35 +76,35 @@ export default function Admin() {
   async function handleSubmit(e) {
     e.preventDefault()
     setSaving(true)
-    const backupPlaces = [...places]
-    if (form.type === 'evento') {
     
-      if (!form.eventStartDate || !form.eventFinishDate) {
+    const payload = { ...form }
+    if (payload.type === 'evento') {
+    
+      if (!payload.eventStartDate || !payload.eventFinishDate) {
         alert("Por favor, preencha as datas de início e término do evento.");
         return; 
       }
 
-      const dataInicio = new Date(form.eventStartDate);
-      const dataFim = new Date(form.eventFinishDate);
+      const dataInicio = new Date(payload.eventStartDate);
+      const dataFim = new Date(payload.eventFinishDate);
 
       if (dataInicio > dataFim) {
         alert("Erro: A data de início não pode ser posterior à data de término!");
         return;
       }
-      if(form.category != "evento"){
-        form.category = "evento"
+      if(payload.category != "evento"){
+        payload.category = "evento"
       }
     }
     try {
-      const newPlace = await createPlace(form)
+      const newPlace = await createPlace(payload)
       setPlaces(prev => [...prev, newPlace])
       setForm(EMPTY_FORM)
       setShowForm(false)
       setSuccessMsg('Lugar adicionado com sucesso!')
       setTimeout(() => setSuccessMsg(''), 3000)
     }catch (error){
-      console.error("Não foi possível remover o lugar do servidor:", error)
-      setPlaces(backupPlaces)
+      console.error("Não foi possível adicionar o lugar no servidor:", error)
       alert("Erro ao adicionar lugar. Tente novamente.")
     }finally {
       setSaving(false)
@@ -305,7 +305,7 @@ export default function Admin() {
                       <span className="badge badge--orange">{p.category}</span>
                     </td>
                     <td>
-                      <span className="stars">{'★'.repeat(Math.round(p.rating))}</span>
+                      <span className="stars">{'★'.repeat(Math.round(p.rating || 0))}</span>
                       {' '}{p.rating?.toFixed(1)}
                     </td>
                     <td>{'$'.repeat(p.priceLevel)}</td>
