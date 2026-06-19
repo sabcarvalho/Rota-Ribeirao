@@ -25,6 +25,7 @@ export default function PlaceDetail() {
   const [isFav, setIsFav]       = useState(false)
   const [reviewRating, setReviewRating]   = useState(5)
   const [reviewComment, setReviewComment] = useState('')
+  const [isAnonymous, setIsAnonymous] = useState(false)
   const [sending, setSending]             = useState(false)
   const [reviews, setReviews]             = useState([])
 
@@ -100,7 +101,7 @@ export default function PlaceDetail() {
     if (!reviewComment.trim()) return
     setSending(true)
     try {
-      const payload = { rating: reviewRating, comment: reviewComment }
+      const payload = { rating: reviewRating, comment: reviewComment, is_anonymous: isAnonymous }
       const newReview = await addReview(place.id, payload)
       
       // Atualização otimista: insere a avaliação e calcula nova nota
@@ -111,6 +112,7 @@ export default function PlaceDetail() {
       
       setReviewComment('')
       setReviewRating(5)
+      setIsAnonymous(false)
     } catch (error) {
       console.error("Erro ao enviar avaliação:", error)
       alert("Erro ao salvar avaliação. Tente novamente.")
@@ -234,6 +236,16 @@ export default function PlaceDetail() {
                       onChange={e => setReviewComment(e.target.value)}
                       required
                     />
+                  </div>
+                  <div className="form-group checkbox-group">
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={isAnonymous}
+                        onChange={e => setIsAnonymous(e.target.checked)}
+                      />{' '}
+                      Publicar de forma anônima
+                    </label>
                   </div>
                   <button type="submit" className="btn btn--primary" disabled={sending}>
                     {sending ? 'Enviando...' : 'Publicar avaliação'}

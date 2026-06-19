@@ -57,7 +57,8 @@ def create_review(
         id_usuario=id_usuario,
         nome_autor=nome_usuario,
         nota=review_data.rating,
-        comentario=review_data.comment
+        comentario=review_data.comment,
+        is_anonymous=review_data.is_anonymous
     )
     
     try:
@@ -99,13 +100,25 @@ def create_review(
 
     return nova_review
 
+def _serialize_review(review: Review) -> ReviewResponseSchema:
+    return ReviewResponseSchema(
+        id=review.id,
+        id_lugar=review.id_lugar,
+        id_usuario=review.id_usuario,
+        nome_autor="Usuário Anônimo" if review.is_anonymous else review.nome_autor,
+        nota=review.nota,
+        comentario=review.comentario,
+        data_criacao=review.data_criacao,
+        is_anonymous=review.is_anonymous,
+    )
+
 @app.get("/places/{id_place}/reviews", response_model=list[ReviewResponseSchema])
 def get_place_reviews(id_place: int, session: Session = Depends(get_session)):
     reviews = session.query(Review)\
         .filter(Review.id_lugar == id_place)\
         .order_by(Review.data_criacao.desc())\
         .all()
-    return reviews
+    return [_serialize_review(review) for review in reviews]
 
 @app.get("/reviews/user/{id_usuario}", response_model=list[ReviewResponseSchema])
 def get_user_reviews(id_usuario: int, session: Session = Depends(get_session)):
@@ -113,7 +126,7 @@ def get_user_reviews(id_usuario: int, session: Session = Depends(get_session)):
         .filter(Review.id_usuario == id_usuario)\
         .order_by(Review.data_criacao.desc())\
         .all()
-    return reviews
+    return [_serialize_review(review) for review in reviews]
 
 @app.delete("/internal/reviews/place/{id_place}")
 def delete_place_reviews_internal(id_place: int, session: Session = Depends(get_session)):

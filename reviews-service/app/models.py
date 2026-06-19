@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, Text, DateTime, UniqueConstraint, CheckConstraint, String
+from sqlalchemy import create_engine, UniqueConstraint, CheckConstraint, Column, Integer, Text, Boolean, DateTime, String
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.sql import text
 import os
@@ -30,3 +30,4 @@ class Review(Base):
     nota = Column(Integer, nullable=False)
     comentario = Column(Text, nullable=True)
     data_criacao = Column(DateTime, server_default=text('CURRENT_TIMESTAMP'))
+    is_anonymous = Column(Boolean, nullable=False, default=False)
