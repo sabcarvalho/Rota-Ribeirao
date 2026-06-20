@@ -41,7 +41,7 @@ def create_review(
 
     # 1. Validar se o local existe usando o microservico places-service
     try:
-        place_resp = requests.get(f"{PLACES_SERVICE_URL}/search_place/?ids={id_place}")
+        place_resp = requests.get(f"{PLACES_SERVICE_URL}/places/?ids={id_place}")
         if place_resp.status_code != 200 or not place_resp.json():
             raise HTTPException(status_code=404, detail="Lugar não encontrado no sistema.")
         

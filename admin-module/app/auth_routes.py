@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Body
+from fastapi import APIRouter, Depends, HTTPException, Body, status
 from app.models import Usuario
 from sqlalchemy.orm import Session
 from app.dependencies import get_session, verificar_token, verificar_refresh_token
@@ -37,7 +37,7 @@ def autenticar_usuario(email, senha, session):
     else:
         return usuario
 
-@auth_router.post("/register")
+@auth_router.post("/register", status_code=status.HTTP_201_CREATED)
 async def criar_conta(usuario_schema: UsuarioSchema, session: Session = Depends(get_session)):
     """
     Essa é a rota de criação de contas. É necessário o envio do nome, email e senha. Retornam-se os tokens de acesso, refresh e os dados de usuario.
@@ -47,7 +47,10 @@ async def criar_conta(usuario_schema: UsuarioSchema, session: Session = Depends(
     usuario = session.query(Usuario).filter(Usuario.email == usuario_schema.email).first()
 
     if usuario:
-        raise HTTPException(status_code=400, detail="E-mail do usuario ja cadastrado")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, 
+            detail="E-mail do usuario ja cadastrado"
+        )
     else:
         senha_criptografada = brcypt_context.hash(usuario_schema.password)
         novo_usuario = Usuario(
@@ -83,7 +86,10 @@ async def login(login_schema: LoginSchema, session: Session = Depends(get_sessio
     """
     usuario = autenticar_usuario(login_schema.email, login_schema.password, session)
     if not usuario:
-        raise HTTPException(status_code=400, detail="Usuario nao encontrado ou credenciais invalidas")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, 
+            detail="Usuario nao encontrado ou credenciais invalidas"
+        )
     else:
         access_token = criar_token(usuario)
         refresh_token = criar_token(usuario, duracao_token= timedelta(days=7))
@@ -102,7 +108,10 @@ async def login_form(dados_formulario: OAuth2PasswordRequestForm = Depends(), se
     """
     usuario = autenticar_usuario(dados_formulario.username, dados_formulario.password, session)
     if not usuario:
-        raise HTTPException(status_code=400, detail="Usuario nao encontrado ou credenciais invalidas")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, 
+            detail="Usuario nao encontrado ou credenciais invalidas"
+        )
     else:
         access_token = criar_token(usuario)
         return {
@@ -137,6 +146,12 @@ async def give_admin(email: str, admin: Usuario = Depends(verificar_token), sess
                     "detail": f"Usuario {usuario.id} tornado admin com sucesso"
             }
         else:
-            raise HTTPException(status_code=400, detail="Usuario nao encontrado")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, 
+                detail="Usuario nao encontrado"
+            )
     else:
-        raise HTTPException(status_code=403,detail="Apenas administradores" )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Apenas administradores"
+        )

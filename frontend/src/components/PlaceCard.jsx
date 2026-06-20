@@ -58,7 +58,7 @@ export default function PlaceCard({ place, onToggleFavorite, isFavorite }) {
           {user && (
             <button
               className={`place-card__fav${isFavorite ? ' active' : ''}`}
-              onClick={() => onToggleFavorite?.(place.id)}
+              onClick={() => onToggleFavorite?.(place.id, isFavorite)}
               aria-label="Favoritar"
             >
               <i className={`fa-${isFavorite ? 'solid' : 'regular'} fa-heart`}></i>

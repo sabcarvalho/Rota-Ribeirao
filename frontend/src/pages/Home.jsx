@@ -57,7 +57,7 @@ export default function Home() {
     carregarDadosHome();
   }, [filters, user])
 
-  async function toggleFavorite(id) {
+  async function toggleFavorite(id, isFavorite) {
     let favs = favorites
     setFavorites(prev => {
       const next = prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id]
@@ -65,7 +65,7 @@ export default function Home() {
       return next
     })
     try {
-      const response = await toggleFavoritePlace(id, true)
+      const response = await toggleFavoritePlace(id, !isFavorite)
       
     } catch (error) {
       setStorageCache("favorites", favs, 30)

@@ -15,7 +15,6 @@ if env_path.exists():
     load_dotenv(env_path)
 else:
     load_dotenv() #quando rodado em docker, vem automaticamente pelo .env da pasta raiz
-    load_dotenv()
 
 
 db_url = os.getenv("DATABASE_URL") #url do supabase
@@ -46,6 +45,7 @@ class Lugar(Base):
     ativo = Column("ativo", Boolean, default=True)
     tipo = Column(String(20)) # 'fixo' ou 'evento'
     image_url = Column(String(500), nullable=True) #link para a imagem do lugar
+    qntd_reviews = Column("qntd_reviews",Integer)
 
     evento = relationship("Evento", uselist=False, back_populates="lugar")
 
