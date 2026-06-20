@@ -62,7 +62,7 @@ def get_places(
     category: str | None = None,
     occasion: str | None = None,
     price_level: int | None = None,
-    min_rating: int | None = None,
+    min_rating: float | None = None,
     event_type: str | None = None,
     ids: list[int] | None = Query(None),
     session: Session = Depends(get_session)
