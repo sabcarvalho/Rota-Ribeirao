@@ -36,7 +36,7 @@ def favorite_place(id_lugar: int, usuario: Usuario = Depends(verificar_token), s
     """
     try:
         #confirma se o local existe na API do Serviço de Lugares
-        response = requests.get(f"{PLACES_SERVICE_URL}search_place/?ids={id_lugar}")
+        response = requests.get(f"{PLACES_SERVICE_URL}/places?ids={id_lugar}")
     except requests.exceptions.RequestException:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY, 

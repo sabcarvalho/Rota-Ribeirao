@@ -233,18 +233,18 @@ crawlerMsg
           </div>
         )}
         {crawlerMsg && (
-          <div className="admin-info" style={{ backgroundColor: '#e0f2fe', color: '#0369a1', padding: '15px', borderRadius: '8px', marginBottom: '20px' }}>
+          <div className="admin-info">
             <i className="fa-solid fa-robot"></i> {crawlerMsg}
           </div>
         )}
 
         {/* MÓDULO DOS ROBÔS */}
-        <div className="admin-crawler-card" style={{ backgroundColor: '#f8fafc', padding: '20px', borderRadius: '12px', marginBottom: '30px', border: '1px solid #e2e8f0' }}>
-          <h2 style={{ marginTop: 0, color: '#334155' }}><i className="fa-solid fa-bolt"></i> Automação Rota Ribeirão</h2>
-          <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-            <div className="form-group" style={{ flex: '1', minWidth: '200px' }}>
+        <div className="admin-crawler-card">
+          <h2 className="admin-crawler-title"><i className="fa-solid fa-bolt"></i> Automação Rota Ribeirão</h2>
+          <div className="admin-crawler-actions">
+            <div className="form-group form-group--crawler-select">
               <label>Buscar Novos Lugares (Overpass)</label>
-              <select value={crawlerType} onChange={e => setCrawlerType(e.target.value)} style={{ padding: '10px', width: '100%', borderRadius: '6px' }}>
+              <select value={crawlerType} onChange={e => setCrawlerType(e.target.value)} className="admin-crawler-select">
                 <option value="bar">Bares, Pubs e Baladas</option>
                 <option value="restaurante">Restaurantes e Sorveterias</option>
                 <option value="cafe">Cafeterias</option>
@@ -254,8 +254,8 @@ crawlerMsg
             <button className="btn btn--primary" onClick={handleRunCrawlerPlaces} disabled={isCrawlerRunning}>
               <i className="fa-solid fa-search"></i> Buscar Lugares
             </button>
-            <div style={{ width: '1px', backgroundColor: '#cbd5e1', margin: '0 10px' }}></div>
-            <button className="btn" style={{ backgroundColor: '#6366f1', color: 'white' }} onClick={handleRunCrawlerEvents} disabled={isCrawlerRunning}>
+            <div className="admin-crawler-divider"></div>
+            <button className="btn btn--purple" onClick={handleRunCrawlerEvents} disabled={isCrawlerRunning}>
               <i className="fa-solid fa-calendar-star"></i> Buscar Eventos (Ticketmaster/Ingresse)
             </button>
             <button className="btn btn--secondary" onClick={fetchPlaces} title="Atualizar a lista de locais abaixo">
@@ -287,11 +287,11 @@ crawlerMsg
               </div>
 
               <div className="admin-form__row">
-                <div className="form-group" style={{ flex: 3 }}>
+                <div className="form-group form-group--lg">
                   <label>Rua / Avenida</label>
                   <input name="street" value={form.street || ''} onChange={handleChange} required placeholder="Ex: Av. Professor João Fiúsa" />
                 </div>
-                <div className="form-group" style={{ flex: 1 }}>
+                <div className="form-group form-group--sm">
                   <label>Número</label>
                   <input name="number" value={form.number || ''} onChange={handleChange} required placeholder="Ex: 1200" />
                 </div>
@@ -311,7 +311,7 @@ crawlerMsg
               <div className="admin-form__row">
                 <div className="form-group">
                   <label>Nota inicial (1-5)</label>
-                  <input name="rating" type="number" min="1" max="5" step="0.1" value={form.rating} onChange={handleChange} />
+                  <input name="rating" type="number" min="0" max="5" step="0.1" value={form.rating} onChange={handleChange} />
                 </div>
                 <div className="form-group">
                   <label>Faixa de preço (1-4)</label>
@@ -335,7 +335,7 @@ crawlerMsg
                     <option value="evento">Evento</option>
                   </select>
                 </div>
-                <div className="form-group" style={{ flex: 1 }}>
+                <div className="form-group form-group--sm">
                   <label>URL da Imagem</label>
                   <input name="image" value={form.image || ''} onChange={handleChange} placeholder="Ex: https://linkdaimagem.com/foto.jpg" />
                 </div>
@@ -347,7 +347,7 @@ crawlerMsg
                   <label>Data de Início (Evento)</label>
                   <input name="eventStartDate" type="date" value={form.eventStartDate || ''} onChange={handleChange} />
                 </div>
-                <div className="form-group" style={{ flex: 1 }}>
+                <div className="form-group form-group--sm">
                   <label>Data de Fim (Evento)</label>
                   <input name="eventFinishDate" type="date" value={form.eventFinishDate || ''} onChange={handleChange} />
                 </div>
@@ -366,7 +366,7 @@ crawlerMsg
                         checked={form.occasion.includes(o)}
                         onChange={handleChange}
                       />
-                      <span style={{textTransform: 'capitalize'}}>{o}</span>
+                      <span className="admin-checkbox-label">{o}</span>
                     </label>
                   ))}
                 </div>
@@ -391,9 +391,9 @@ crawlerMsg
         )}
 
         {/* TABELA 1: LUGARES PENDENTES */}
-        <div className="admin-table-card" style={{ borderLeft: '4px solid #f59e0b', marginBottom: '30px' }}>
+        <div className="admin-table-card admin-table-card--pending">
           <h2>Pendentes para Aprovação ({pendingPlaces.length})</h2>
-          <p style={{ color: '#64748b', marginBottom: '15px' }}>Estes lugares foram trazidos pelos robôs e aguardam a sua curadoria.</p>
+          <p className="admin-table-desc">Estes lugares foram trazidos pelos robôs e aguardam a sua curadoria.</p>
           
           <div className="admin-table-wrapper">
             <table className="admin-table">
@@ -406,23 +406,23 @@ crawlerMsg
               </thead>
               <tbody>
                 {pendingPlaces.length === 0 ? (
-                  <tr><td colSpan="3" style={{ textAlign: 'center', padding: '20px', color: '#94a3b8' }}>Nenhum lugar pendente na fila.</td></tr>
+                  <tr><td colSpan="3" className="admin-table-empty">Nenhum lugar pendente na fila.</td></tr>
                 ) : (
                   pendingPlaces.map(p => (
-                    <tr key={p.id} className="admin-table-row" style={{ backgroundColor: '#fffbeb' }}>
+                    <tr key={p.id} className="admin-table-row admin-table-row--pending">
                       <td>
                         <strong>{p.name}</strong><br/>
                         <small>{p.street}, {p.number} - {p.district}</small>
                       </td>
                       <td>
                         <span className="badge badge--orange">{p.category}</span>
-                        <small style={{display: 'block', marginTop: '5px', color: '#64748b'}}>{p.type}</small>
+                        <small className="admin-type-label">{p.type}</small>
                       </td>
-                      <td style={{ display: 'flex', gap: '8px' }}>
+                      <td className="admin-table-actions">
                         <button className="admin-status-btn admin-status-btn--activate" onClick={() => handleToggleActive(p.id, true, p.status)}>
                           <i className="fa-solid fa-check"></i> Aprovar
                         </button>
-                        <button className="btn btn--secondary" style={{ padding: '6px 12px', fontSize: '14px' }} onClick={() => handleEditClick(p)}>
+                        <button className="btn btn--secondary btn--sm" onClick={() => handleEditClick(p)}>
                           <i className="fa-solid fa-pen"></i> Editar
                         </button>
                         <button className="admin-delete-btn" onClick={() => handleDelete(p.id)}>
@@ -438,7 +438,7 @@ crawlerMsg
         </div>
 
         {/* TABELA 2: LUGARES CADASTRADOS (ATIVOS E DESATIVADOS) */}
-        <div className="admin-table-card" style={{ borderLeft: '4px solid #10b981' }}>
+        <div className="admin-table-card admin-table-card--registered">
           <h2>Base de Dados Cadastrada ({registeredPlaces.length})</h2>
           <div className="admin-table-wrapper">
             <table className="admin-table">
@@ -472,14 +472,14 @@ crawlerMsg
                       {' '}{p.rating?.toFixed(1)}
                     </td>
                     <td>{'$'.repeat(p.priceLevel || 1)}</td>
-                    <td style={{ display: 'flex', gap: '8px' }}>
+                    <td className="admin-table-actions">
                       <button
                         className={p.status === 'ativo' ? "admin-status-btn admin-status-btn--deactivate" : "admin-status-btn admin-status-btn--activate"}
                         onClick={() => handleToggleActive(p.id, p.status === 'desativado', p.status)}>
                         <i className={p.status === 'ativo' ? "fa-solid fa-eye-slash" : "fa-solid fa-eye"}></i>{' '}
                         {p.status === 'ativo' ? "Desativar" : "Ativar"}
                       </button>
-                      <button className="btn btn--secondary" style={{ padding: '6px 12px', fontSize: '14px' }} onClick={() => handleEditClick(p)}>
+                      <button className="btn btn--secondary btn--sm" onClick={() => handleEditClick(p)}>
                           <i className="fa-solid fa-pen"></i> Editar
                       </button>
                       <button

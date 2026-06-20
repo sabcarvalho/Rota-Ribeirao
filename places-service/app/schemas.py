@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, Literal
 from datetime import datetime
 
 
@@ -34,11 +34,11 @@ class CriacaoLugarSchema(BaseModel):
     priceLevel: int
     rating: float
     description: str
-    type: str
+    type: Literal["fixo", "evento"] = "fixo"
     image: Optional[str] = None
     eventStartDate: Optional[datetime] = None
     eventFinishDate: Optional[datetime] = None
-    status: str
+    status: Literal["ativo", "desativado", "pendente"] = "pendente"
     class Config:
         from_attributes = True
 

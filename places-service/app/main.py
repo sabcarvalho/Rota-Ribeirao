@@ -54,6 +54,8 @@ async def get_admin_places(session: Session = Depends(get_session),usuario: dict
         
     return lugares
 
+from sqlalchemy.orm import with_polymorphic
+
 @app.get("/places", response_model=list[LugarResponseSchema])
 def get_places(
     name: str | None = None,
@@ -65,59 +67,52 @@ def get_places(
     ids: list[int] | None = Query(None),
     session: Session = Depends(get_session)
 ):
-    # 1. Restauramos o filtro correto com a coluna status e o is_(True)
-    filtro_ativo = and_(Lugar.status == "ativo")
+    """
+    Essa rota retorna todos os lugares filtrados pelos parametros passados: nome, categoria, ocasião, nível de preço, nota e se é fixo ou um evento. 
 
-    if ids:
-        return session.query(Lugar)\
-            .filter(Lugar.id.in_(ids), filtro_ativo)\
+    Há a filtragem de locais desativados e eventos que já passaram.
+    """
+
+    lugar_poly = with_polymorphic(Lugar, [Evento]) #juntando as duas tabelas pela polimorfia
+
+    filtro_ativo = and_(lugar_poly.status == "ativo") #apenas lugares com o status ativo
+
+    if ids: #se a busca for por ids
+        return session.query(lugar_poly)\
+            .filter(lugar_poly.id.in_(ids), filtro_ativo)\
             .all()
     
-    lugar_query = session.query(Lugar).outerjoin(
-        Evento.__table__, 
-        Lugar.id == Evento.__table__.c.id
-    ).filter(filtro_ativo)
+    lugar_query = session.query(lugar_poly).filter(filtro_ativo)
 
     now = datetime.now()
     
-    # O restante da lógica permanece igual
     if event_type:
         lugar_query = lugar_query.filter(
-            func.lower(Lugar.tipo) == event_type.lower(),
+            func.lower(lugar_poly.tipo) == event_type.lower(),
             Evento.data_fim >= now
         )
     else:
         lugar_query = lugar_query.filter(
             or_(
-                func.lower(Lugar.tipo) == 'fixo', 
+                func.lower(lugar_poly.tipo) == 'fixo', 
                 Evento.data_fim >= now
             )
         )
 
     if name:
-        lugar_query = lugar_query.filter(
-            Lugar.nome.ilike(f"%{name}%")
-        )
+        lugar_query = lugar_query.filter(lugar_poly.nome.ilike(f"%{name}%"))
 
     if category:
-        lugar_query = lugar_query.filter(
-            func.lower(Lugar.categoria) == category.lower()
-        )
+        lugar_query = lugar_query.filter(func.lower(lugar_poly.categoria) == category.lower())
 
     if occasion:
-        lugar_query = lugar_query.filter(
-            Lugar.tags.ilike(f"%{occasion}%")
-        )
+        lugar_query = lugar_query.filter(lugar_poly.tags.ilike(f"%{occasion}%"))
     
     if price_level:
-        lugar_query = lugar_query.filter(
-            Lugar.preco <= price_level
-        )
+        lugar_query = lugar_query.filter(lugar_poly.preco <= price_level)
     
     if min_rating:
-        lugar_query = lugar_query.filter(
-            Lugar.nota >= min_rating
-        )
+        lugar_query = lugar_query.filter(lugar_poly.nota >= min_rating)
 
     return lugar_query.all()
 
@@ -125,7 +120,11 @@ def get_places(
 @app.post("/places", response_model=LugarResponseSchema, status_code=status.HTTP_201_CREATED)
 def create_place(lugar_schema: CriacaoLugarSchema, session: Session = Depends(get_session), 
                  usuario: dict = Depends(verificar_admin)):
-    
+    """
+    Essa rota cria um local no banco de dados, mas apenas é permitida aos administradores. 
+
+    Retorna 401 se não logado/token expirado e se não for admin.
+    """
     if lugar_schema.type == "evento":
         duplicata = session.query(Evento).filter(
             Evento.nome == lugar_schema.name,
@@ -143,30 +142,23 @@ def create_place(lugar_schema: CriacaoLugarSchema, session: Session = Depends(ge
         if duplicata:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Este local já está cadastrado neste endereço.")
     
-    schema_status = getattr(lugar_schema, "status", "pendente")
-
-    if schema_status == "pendente": 
-        status_lugar = "pendente"
-        is_ativo = False
-    else:
-        status_lugar = schema_status
-        is_ativo = True if schema_status == "ativo" else False
+    status_lugar = lugar_schema.status
+    is_ativo = True if status_lugar == "ativo" else False
 
     if lugar_schema.type == "evento":
         db_place = Evento(nome=lugar_schema.name, rua=lugar_schema.street, numero_rua=lugar_schema.number,
-                        bairro=lugar_schema.district, cep=lugar_schema.cep,categoria= lugar_schema.category.lower(),
-                        tags= lugar_schema.occasion.lower(), preco=lugar_schema.priceLevel, nota=lugar_schema.rating,
-                        descricao=lugar_schema.description,tipo= 'evento', image_url=lugar_schema.image,
-                        data_inicio = lugar_schema.eventStartDate,
-                        data_fim = lugar_schema.eventFinishDate, status=status_lugar,
+                        bairro=lugar_schema.district, cep=lugar_schema.cep, categoria=lugar_schema.category.lower(),
+                        tags=lugar_schema.occasion.lower(), preco=lugar_schema.priceLevel, nota=lugar_schema.rating,
+                        descricao=lugar_schema.description, tipo='evento', image_url=lugar_schema.image,
+                        data_inicio=lugar_schema.eventStartDate,
+                        data_fim=lugar_schema.eventFinishDate, status=status_lugar,
                         ativo=is_ativo
                     )
-        
     else:
         db_place = Lugar(nome=lugar_schema.name, rua=lugar_schema.street, numero_rua=lugar_schema.number,
-                        bairro=lugar_schema.district, cep=lugar_schema.cep,categoria= lugar_schema.category.lower(),
-                        tags= lugar_schema.occasion.lower(), preco=lugar_schema.priceLevel, nota=lugar_schema.rating,
-                        descricao=lugar_schema.description,tipo= lugar_schema.type, image_url=lugar_schema.image,
+                        bairro=lugar_schema.district, cep=lugar_schema.cep, categoria=lugar_schema.category.lower(),
+                        tags=lugar_schema.occasion.lower(), preco=lugar_schema.priceLevel, nota=lugar_schema.rating,
+                        descricao=lugar_schema.description, tipo=lugar_schema.type, image_url=lugar_schema.image,
                         status=status_lugar, ativo=is_ativo)
     
     session.add(db_place)
@@ -202,7 +194,7 @@ def ativate_place(id_place: int,  usuario: dict = Depends(verificar_admin), sess
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lugar não encontrado")
 
     lugar.status = "ativo"
-    lugar.ativo = True # Tranca a coluna booleana também!
+    lugar.ativo = True 
     session.commit()
     return {"detail": "Lugar ativado com sucesso"}
 
@@ -223,12 +215,12 @@ def update_place(
     for key, value in dados_dict.items():
         if key == "name": key = "nome"
         elif key == "street": key = "rua"
-        elif key == "number": key = "numero_rua" # Corrigido de numer_rua
+        elif key == "number": key = "numero_rua" 
         elif key == "district": key = "bairro"
         elif key == "category": key = "categoria"
         elif key == "occasion": key = "tags"
         elif key == "priceLevel": key = "preco"
-        elif key == "description": key = "descricao" # Corrigido de description
+        elif key == "description": key = "descricao" 
         elif key == "image": key = "image_url"
         elif key == "eventStartDate": key = "data_inicio"
         elif key == "eventFinishDate": key = "data_fim"

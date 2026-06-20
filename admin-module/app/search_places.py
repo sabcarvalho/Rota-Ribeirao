@@ -224,7 +224,7 @@ class SearchPlacesOverpass:
                     "priceLevel": 1, # Padrão para lugares novos
                     "rating": 0.0,   # Sem avaliações no início
                     "description": descricao.strip(),
-                    "type": "lugar",
+                    "type": "fixo",
                     "image": imagem,
                     "status": "pendente",
                 }

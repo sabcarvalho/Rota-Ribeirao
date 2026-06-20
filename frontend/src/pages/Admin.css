@@ -212,3 +212,112 @@
 .admin-status-btn--activate:hover {
   background-color: #449d44;
 }
+.admin-info { 
+  background-color: #e0f2fe;
+  color: #0369a1; 
+  padding: 15px; 
+  border-radius: 8px; 
+  margin-bottom: 20px 
+}
+.admin-crawler-card { 
+  background-color: #f8fafc;
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 30px;
+  border: 1px solid #e2e8f0; 
+}
+.admin-crawler-title {
+  margin-top: 0;
+  color: #334155;
+}
+
+.admin-crawler-actions {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.form-group--crawler-select {
+  flex: 1;
+  min-width: 200px;
+}
+
+.admin-crawler-select {
+  padding: 10px;
+  width: 100%;
+  border-radius: 6px;
+  /* Adicione bordas e cores de fundo se achar necessário para casar com seu tema */
+}
+
+.admin-crawler-divider {
+  width: 1px;
+  background-color: #cbd5e1;
+  margin: 0 10px;
+  align-self: stretch; /* Garante que a linha acompanhe a altura dos botões */
+}
+
+.btn--purple {
+  background-color: #6366f1;
+  color: white;
+  border: none;
+}
+
+.btn--purple:hover {
+  background-color: #4f46e5; /* Um leve escurecimento no hover */
+}
+
+.btn--sm {
+  padding: 6px 12px;
+  font-size: 14px;
+}
+
+.form-group--lg {
+  flex: 3;
+}
+
+.form-group--sm {
+  flex: 1;
+}
+
+.admin-checkbox-label {
+  text-transform: capitalize;
+}
+
+/* =========================================
+   TABELAS E CARDS
+========================================= */
+.admin-table-card--pending {
+  border-left: 4px solid #f59e0b;
+  margin-bottom: 30px;
+}
+
+.admin-table-card--registered {
+  border-left: 4px solid #10b981;
+}
+
+.admin-table-desc {
+  color: #64748b;
+  margin-bottom: 15px;
+}
+
+.admin-table-empty {
+  text-align: center;
+  padding: 20px;
+  color: #94a3b8;
+}
+
+.admin-table-row--pending {
+  background-color: #fffbeb;
+}
+
+.admin-type-label {
+  display: block;
+  margin-top: 5px;
+  color: #64748b;
+}
+
+.admin-table-actions {
+  display: flex;
+  gap: 8px;
+}

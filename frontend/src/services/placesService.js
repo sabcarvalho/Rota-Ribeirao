@@ -106,6 +106,8 @@ export const MOCK_PLACES = [
 function mapPlaceToFrontend(backendPlace) {
   if (!backendPlace) return null
 
+  if(backendPlace.event)
+    console.log(backendPlace.event)
 
   return {
     id: backendPlace.id,

@@ -19,7 +19,7 @@ else:
 
 
 db_url = os.getenv("DATABASE_URL")
-db = create_engine(db_url, echo=True)
+db = create_engine(db_url)
 
 
 #criar a base do banco de dados
@@ -44,7 +44,7 @@ class Lugar(Base):
     ativo = Column("ativo", Boolean, default=True)
     tipo = Column(String(20)) # 'fixo' ou 'evento'
     image_url = Column(String(500), nullable=True) #link para a imagem do lugar
-    status = Column(String, default="pendente")
+    status = Column(String, default="pendente", nullable=False)
 
 
     def __init__(self, nome, rua, numero_rua, bairro, cep, categoria,
@@ -69,7 +69,12 @@ class Lugar(Base):
         if not self.tags:
             return []
         return [tag.strip() for tag in self.tags.split(",")]
-
+    @property
+    def evento(self):
+        if self.tipo == "evento":
+            return self
+        return None
+    
     @_tags.setter
     def _tags(self, tags_list: list[str]):
         if tags_list:
