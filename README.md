@@ -19,7 +19,7 @@ O projeto segue uma arquitetura **Multitier** e **Microservices**, garantindo o 
   
   - `servico-recomendacao`: Algoritmo de sugestão baseado no perfil do usuário.
 
-- **Nível de Dados:** Banco de dadps relacional com PostgreSQL
+- **Nível de Dados:** Banco de dados relacional com PostgreSQL
 
 ---
 

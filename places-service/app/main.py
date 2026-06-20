@@ -1,11 +1,11 @@
 from fastapi import FastAPI, Depends, HTTPException, Query, Request, status
-from app.schemas import CriacaoLugarSchema, LugarResponseSchema, UpdateRatingSchema
+from app.schemas import CriacaoLugarSchema, LugarResponseSchema, UpdateRatingSchema, AtualizacaoLugarSchema
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session, joinedload, selectinload
 from passlib.context import CryptContext
 from app.models import Lugar, Evento
-from sqlalchemy import func, or_
+from sqlalchemy import func, or_, and_
 from dotenv import load_dotenv
 from datetime import datetime
 from pathlib import Path
@@ -14,7 +14,7 @@ import os
 
 app = FastAPI()
 
-#definicao do caminho das variaveis de ambiente quando se roda localmente
+# definicao do caminho das variaveis de ambiente quando se roda localmente
 env_path = Path(__file__).resolve().parent / '.env'
 if env_path.exists():
     load_dotenv(env_path)
@@ -29,7 +29,7 @@ FRONTEND_ORIGIN = os.getenv("FRONT_END_URL", "http://localhost:3000").rstrip('/'
 ADMIN_MODULE_URL = os.getenv("ADMIN_SERVICE_URL").rstrip('/')
 REVIEW_SERVICE_URL = os.getenv("REVIEW_SERVICE_URL").rstrip('/')
 
-#configurando o CORS para apenas aceitar o frontend
+# configurando o CORS para apenas aceitar o frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[FRONTEND_ORIGIN], 
@@ -49,7 +49,6 @@ async def get_admin_places(session: Session = Depends(get_session),usuario: dict
     Essa rota retorna todos os Lugares da base para o administrador, mesmo estando desativado.
     """
     lugares = session.query(Lugar)\
-        .options(joinedload(Lugar.evento))\
         .order_by(Lugar.id.desc())\
         .all()
         
@@ -66,31 +65,32 @@ def get_places(
     ids: list[int] | None = Query(None),
     session: Session = Depends(get_session)
 ):
-    """
-    Essa rota retorna todos os lugares filtrados pelos parametros passados: nome, categoria, ocasião, nível de preço, nota e se é fixo ou um evento. 
+    # 1. Restauramos o filtro correto com a coluna status e o is_(True)
+    filtro_ativo = and_(Lugar.status == "ativo")
 
-    Há a filtragem de locais desativados e eventos que já passaram.
-    """
     if ids:
         return session.query(Lugar)\
-            .options(joinedload(Lugar.evento))\
-            .filter(Lugar.id.in_(ids), Lugar.ativo == True)\
+            .filter(Lugar.id.in_(ids), filtro_ativo)\
             .all()
     
-    lugar_query = session.query(Lugar).options(selectinload(Lugar.evento)).filter(Lugar.ativo == True)
+    lugar_query = session.query(Lugar).outerjoin(
+        Evento.__table__, 
+        Lugar.id == Evento.__table__.c.id
+    ).filter(filtro_ativo)
 
     now = datetime.now()
     
+    # O restante da lógica permanece igual
     if event_type:
         lugar_query = lugar_query.filter(
             func.lower(Lugar.tipo) == event_type.lower(),
-            Lugar.evento.has(Evento.data_fim >= now)
+            Evento.data_fim >= now
         )
     else:
         lugar_query = lugar_query.filter(
             or_(
                 func.lower(Lugar.tipo) == 'fixo', 
-                Lugar.evento.has(Evento.data_fim >= now)
+                Evento.data_fim >= now
             )
         )
 
@@ -101,8 +101,7 @@ def get_places(
 
     if category:
         lugar_query = lugar_query.filter(
-            func.lower(Lugar.categoria)
-            == category.lower()
+            func.lower(Lugar.categoria) == category.lower()
         )
 
     if occasion:
@@ -126,77 +125,138 @@ def get_places(
 @app.post("/places", response_model=LugarResponseSchema, status_code=status.HTTP_201_CREATED)
 def create_place(lugar_schema: CriacaoLugarSchema, session: Session = Depends(get_session), 
                  usuario: dict = Depends(verificar_admin)):
-    """
-    Essa rota cria um local no banco de dados, mas apenas é permitida aos administradores. 
+    
+    if lugar_schema.type == "evento":
+        duplicata = session.query(Evento).filter(
+            Evento.nome == lugar_schema.name,
+            Evento.data_inicio == lugar_schema.eventStartDate
+        ).first()
+        if duplicata:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Este evento já existe nesta data.")
+    else:
+        duplicata = session.query(Lugar).filter(
+            Lugar.nome == lugar_schema.name,
+            Lugar.rua == lugar_schema.street,
+            Lugar.numero_rua == lugar_schema.number,
+            Lugar.tipo == lugar_schema.type 
+        ).first()
+        if duplicata:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Este local já está cadastrado neste endereço.")
+    
+    schema_status = getattr(lugar_schema, "status", "pendente")
 
-    Retorna 401 se não logado/token expirado e se não for admin.
-    """
+    if schema_status == "pendente": 
+        status_lugar = "pendente"
+        is_ativo = False
+    else:
+        status_lugar = schema_status
+        is_ativo = True if schema_status == "ativo" else False
+
     if lugar_schema.type == "evento":
         db_place = Evento(nome=lugar_schema.name, rua=lugar_schema.street, numero_rua=lugar_schema.number,
                         bairro=lugar_schema.district, cep=lugar_schema.cep,categoria= lugar_schema.category.lower(),
                         tags= lugar_schema.occasion.lower(), preco=lugar_schema.priceLevel, nota=lugar_schema.rating,
                         descricao=lugar_schema.description,tipo= 'evento', image_url=lugar_schema.image,
                         data_inicio = lugar_schema.eventStartDate,
-                        data_fim = lugar_schema.eventFinishDate,
+                        data_fim = lugar_schema.eventFinishDate, status=status_lugar,
+                        ativo=is_ativo
                     )
         
     else:
         db_place = Lugar(nome=lugar_schema.name, rua=lugar_schema.street, numero_rua=lugar_schema.number,
                         bairro=lugar_schema.district, cep=lugar_schema.cep,categoria= lugar_schema.category.lower(),
                         tags= lugar_schema.occasion.lower(), preco=lugar_schema.priceLevel, nota=lugar_schema.rating,
-                        descricao=lugar_schema.description,tipo= lugar_schema.type, image_url=lugar_schema.image)
+                        descricao=lugar_schema.description,tipo= lugar_schema.type, image_url=lugar_schema.image,
+                        status=status_lugar, ativo=is_ativo)
+    
     session.add(db_place)
     session.commit()
     session.refresh(db_place)
 
     return db_place
-
+    
 
 @app.post("/places/{id_place}/deactivate")
 def deativate_place(id_place: int,  usuario: dict = Depends(verificar_admin), session: Session = Depends(get_session)):
     """
-    Essa rota desativa o local referente ao id passado no banco de dados, mas apenas é permitida aos administradores. 
-
-    Retorna 401 se não logado/token expirado e se não for admin.
+    Desativa o local.
     """
     lugar = session.query(Lugar).filter(Lugar.id == id_place).first()
 
     if not lugar:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lugar não encontrado")
 
-    lugar.ativo = False
+    lugar.status = "desativado"
+    lugar.ativo = False # Tranca a coluna booleana também!
     session.commit()
     return {"detail": "Lugar desativado com sucesso"}
 
 @app.post("/places/{id_place}/activate")
 def ativate_place(id_place: int,  usuario: dict = Depends(verificar_admin), session: Session = Depends(get_session)):
     """
-    Essa rota ativa o local referente ao id passado no banco de dados, mas apenas é permitida aos administradores. 
-
-    Retorna 401 se não logado/token expirado e se não for admin.
+    Ativa o local.
     """
     lugar = session.query(Lugar).filter(Lugar.id == id_place).first()
 
     if not lugar:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lugar não encontrado")
 
-    lugar.ativo = True
+    lugar.status = "ativo"
+    lugar.ativo = True # Tranca a coluna booleana também!
     session.commit()
     return {"detail": "Lugar ativado com sucesso"}
+
+@app.patch("/places/{place_id}", response_model=LugarResponseSchema)
+def update_place(
+    place_id: int, 
+    dados_atualizacao: AtualizacaoLugarSchema, 
+    session: Session = Depends(get_session), 
+    usuario: dict = Depends(verificar_admin)
+):
+    db_place = session.query(Lugar).filter(Lugar.id == place_id).first()
+    
+    if not db_place:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Local ou evento não encontrado.")
+
+    dados_dict = dados_atualizacao.model_dump(exclude_unset=True)
+    
+    for key, value in dados_dict.items():
+        if key == "name": key = "nome"
+        elif key == "street": key = "rua"
+        elif key == "number": key = "numero_rua" # Corrigido de numer_rua
+        elif key == "district": key = "bairro"
+        elif key == "category": key = "categoria"
+        elif key == "occasion": key = "tags"
+        elif key == "priceLevel": key = "preco"
+        elif key == "description": key = "descricao" # Corrigido de description
+        elif key == "image": key = "image_url"
+        elif key == "eventStartDate": key = "data_inicio"
+        elif key == "eventFinishDate": key = "data_fim"
+
+        # Se o admin enviar uma atualização de status, assegura a consistência
+        if key == "status":
+            if value == "ativo":
+                db_place.ativo = True
+            else:
+                db_place.ativo = False
+
+        setattr(db_place, key, value)
+
+    session.commit()
+    session.refresh(db_place)
+
+    return db_place
 
 @app.delete("/places/{id_place}") 
 def delete_favorite(id_place: int, request: Request, usuario: dict = Depends(verificar_admin), session: Session = Depends(get_session)):
     """
-    Essa rota deleta o local referente ao id passado no banco de dados, mas apenas é permitida aos administradores. 
-
-    Retorna 401 se não logado/token expirado e se não for admin.
+    Essa rota deleta o local/evento referente ao id passado no banco de dados.
     """
     lugar = session.query(Lugar).filter(Lugar.id == id_place).first()
 
     if not lugar:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lugar não encontrado")
     
-    #pegando o token na requisicao para mandar para a API admin
     auth_header = request.headers.get("Authorization")
     if not auth_header:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token de autorização ausente")
@@ -204,15 +264,15 @@ def delete_favorite(id_place: int, request: Request, usuario: dict = Depends(ver
     headers_internos = {
         "Authorization": auth_header 
     }
+    
     try:
-        if lugar.tipo == "evento": #se eh um evento, exclui tbm na tabela referente
-            evento = session.query(Evento).filter(Evento.id == id_place).first()
-            if evento:
-                session.delete(evento)
-
-        session.delete(lugar) #deleta o lugar
+        session.delete(lugar)
         session.flush() 
         
+        if lugar.status == "pendente":
+            session.commit() 
+            return {"detail": "Lugar removido com sucesso"}
+            
     except Exception as e:
         session.rollback()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -262,5 +322,3 @@ def update_place_rating(id_place: int, rating_data: UpdateRatingSchema, session:
     lugar.qntd_reviews = rating_data.qntd_reviews
     session.commit()
     return {"detail": "Nota e quantidade de reviews atualizadas com sucesso"}
-    
-    

@@ -7,6 +7,22 @@ class UpdateRatingSchema(BaseModel):
     nota: float
     qntd_reviews: int
 
+class AtualizacaoLugarSchema(BaseModel):
+    name: Optional[str] = None
+    street: Optional[str] = None
+    number: Optional[str] = None
+    district: Optional[str] = None
+    cep: Optional[str] = None
+    category: Optional[str] = None
+    occasion: Optional[str] = None
+    priceLevel: Optional[int] = None
+    description: Optional[str] = None
+    image: Optional[str] = None
+    eventStartDate: Optional[datetime] = None
+    eventFinishDate: Optional[datetime] = None
+    class Config:
+        from_attributes = True
+
 class CriacaoLugarSchema(BaseModel):
     name: str
     street: str
@@ -22,6 +38,7 @@ class CriacaoLugarSchema(BaseModel):
     image: Optional[str] = None
     eventStartDate: Optional[datetime] = None
     eventFinishDate: Optional[datetime] = None
+    status: str
     class Config:
         from_attributes = True
 
@@ -49,6 +66,7 @@ class LugarResponseSchema(BaseModel):
     image: Optional[str] = Field(default=None, validation_alias="image_url")
     event: EventoResponseSchema | None = Field(default=None, validation_alias="evento")
     ativo: bool = Field(serialization_alias="active")
+    status: str 
 
     class Config:
         from_attributes = True

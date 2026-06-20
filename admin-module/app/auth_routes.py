@@ -135,7 +135,7 @@ async def use_refresh_token(r_token_schema: RefreshTokenSchema, session: Session
 @auth_router.post("/give_admin/{email}")
 async def give_admin(email: str, admin: Usuario = Depends(verificar_token), session: Session = Depends(get_session)):
     """
-    Essa é a rota de concessão de Administrador a um usuário pré-existe. O dono da requisição deve ser administrador.
+    Essa é a rota de concessão de Administrador a um usuário pré-existente. O dono da requisição deve ser administrador.
     """
     if admin.admin:
         usuario = session.query(Usuario).filter(Usuario.email == email).first()
