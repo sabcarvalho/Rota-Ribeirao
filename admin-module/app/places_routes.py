@@ -42,9 +42,9 @@ def favorite_place(id_lugar: int, usuario: Usuario = Depends(verificar_token), s
     if response.status_code == 200: #se existe
         dados = response.json() 
         buscar_fav = session.query(Favorito).filter(
-            Favorito.id_lugar == id_lugar, 
+            Favorito.id_lugar == id_lugar,
             Favorito.id_usuario == usuario.id
-        )
+        ).first()
         if buscar_fav:
             return {
                 "id": buscar_fav.id,

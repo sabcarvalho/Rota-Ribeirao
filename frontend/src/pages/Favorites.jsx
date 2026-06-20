@@ -12,6 +12,10 @@ export default function Favorites() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (!user) {
+      setLoading(false)
+      return
+    }
     async function carregarFavoritos() {
       try {
         let ids = getStorageCache('favorites')
@@ -38,7 +42,7 @@ export default function Favorites() {
     }
 
     carregarFavoritos()
-  }, [])
+  }, [user])
 
   async function handleRemoveFavorite(idLugar) {
     const backupIds = [...favoritesIds]
@@ -68,7 +72,7 @@ export default function Favorites() {
         <div className="container">
           <div className="empty-state">
             <i className="fa-solid fa-lock"></i>
-            <p>Você precisa estar logado para ver seus favoritos.</p>
+            <p>Faça login para ter favoritos.</p>
             <Link to="/login" className="btn btn--primary">
               <i className="fa-solid fa-right-to-bracket"></i> Entrar
             </Link>

@@ -53,7 +53,9 @@ export default function FilterBar({ filters, onFilter }) {
       </div>
 
       <div className="filter-bar__selects">
+        <label htmlFor="filtro-preco" className="sr-only">Filtrar por preço</label>
         <select
+          id="filtro-preco"
           value={filters.priceLevel}
           onChange={e => handleChange('priceLevel', e.target.value)}
           className="filter-select"
@@ -63,7 +65,9 @@ export default function FilterBar({ filters, onFilter }) {
           ))}
         </select>
 
+        <label htmlFor="filtro-ocasiao" className="sr-only">Filtrar por ocasião</label>
         <select
+          id="filtro-ocasiao"
           value={filters.occasion}
           onChange={e => handleChange('occasion', e.target.value)}
           className="filter-select"
@@ -73,7 +77,9 @@ export default function FilterBar({ filters, onFilter }) {
           ))}
         </select>
 
+        <label htmlFor="filtro-nota" className="sr-only">Filtrar por nota mínima</label>
         <select
+          id="filtro-nota"
           value={filters.minRating}
           onChange={e => handleChange('minRating', e.target.value)}
           className="filter-select"

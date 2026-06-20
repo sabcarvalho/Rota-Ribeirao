@@ -21,7 +21,7 @@ export default function Login() {
       setUser(user)
       navigate('/')
     } catch (err) {
-      setError(err.message)
+      setError(err.message || 'Erro ao conectar com o servidor. Tente novamente.')
     } finally {
       setLoading(false)
     }
@@ -50,7 +50,7 @@ export default function Login() {
               type="email"
               placeholder="seu@email.com"
               value={email}
-              onChange={e => setEmail(e.target.value)}
+              onChange={e => { setEmail(e.target.value); setError('') }}
               required
             />
           </div>
@@ -62,7 +62,7 @@ export default function Login() {
               type="password"
               placeholder="••••••••"
               value={password}
-              onChange={e => setPassword(e.target.value)}
+              onChange={e => { setPassword(e.target.value); setError('') }}
               required
             />
           </div>

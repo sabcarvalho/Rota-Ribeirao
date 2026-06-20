@@ -9,32 +9,43 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    async function getNewToken() {
-      return await refreshToken()
-    }
-    const token = localStorage.getItem('token')
-    if (token && token !== 'mock-token-user' && token !== 'mock-token-admin') {
+    async function carregarSessao() {
+      const token = localStorage.getItem('token')
+      if (!token) {
+        setLoading(false)
+        return
+      }
+
       try {
         let decoded = jwtDecode(token)
-        const margemSeguranca = 15;
+        const margemSeguranca = 15
+        const currentTime = Date.now() / 1000
 
-        const currentTime = Date.now() / 1000;
-        if(!decoded.exp || (currentTime + margemSeguranca) > decoded.exp){
-          decoded = getNewToken()
+        // Token expirado (ou prestes a) -> tenta renovar e re-decodificar
+        if (!decoded.exp || (currentTime + margemSeguranca) > decoded.exp) {
+          await refreshToken()
+          const novoToken = localStorage.getItem('token')
+          decoded = jwtDecode(novoToken)
         }
 
         setUser({
           id: decoded.sub,
           name: decoded.name || '',
           email: decoded.email || '',
-          isAdmin: decoded.isAdmin === 'True' || decoded.isAdmin === true
+          isAdmin: decoded.isAdmin === 'True' || decoded.isAdmin === true,
         })
-      } catch (e) {
-        if(e instanceof TokenExpiredError)
-          setUser(null)
+      } catch {
+        // Token inválido ou sessão expirada -> desloga silenciosamente
+        localStorage.removeItem('token')
+        localStorage.removeItem('refreshToken')
+        localStorage.removeItem('favorites')
+        setUser(null)
+      } finally {
+        setLoading(false)
       }
     }
-    setLoading(false)
+
+    carregarSessao()
   }, [])
 
   return (

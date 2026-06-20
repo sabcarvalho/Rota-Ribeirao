@@ -7,6 +7,9 @@
 :root {
   --primary: #837b9c;
   --primary-dark: #6a319c;
+  /* Roxo de marca para superfícies com TEXTO BRANCO (contraste AA ≥ 4,5:1) */
+  --accent: #6c4aa0;
+  --accent-dark: #573c84;
   --dark: #392052;
   --dark-2: #393952;
   --white: #ffffff;
@@ -59,12 +62,12 @@ img {
 }
 
 .btn--primary {
-  background: var(--primary);
+  background: var(--accent);
   color: var(--white);
 }
 
 .btn--primary:hover {
-  background: var(--primary-dark);
+  background: var(--accent-dark);
   transform: translateY(-1px);
 }
 
@@ -154,9 +157,9 @@ img {
   letter-spacing: 0.5px;
 }
 
-.badge--orange { background: #fff3e0; color: #e65100; }
+.badge--orange { background: #fff3e0; color: #9a3412; }
 .badge--blue   { background: #e3f2fd; color: #1565c0; }
-.badge--green  { background: #e8f5e9; color: #2e7d32; }
+.badge--green  { background: #e8f5e9; color: #1b5e20; }
 .badge--red    { background: #fce4ec; color: #c62828; }
 .badge--purple { background: #f3e5f5; color: #6a1b9a; }
 
@@ -181,4 +184,17 @@ img {
 .empty-state p {
   font-size: 1.1rem;
   margin-bottom: 20px;
+}
+
+/* Acessível a leitores de tela, invisível visualmente */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }

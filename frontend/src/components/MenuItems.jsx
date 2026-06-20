@@ -13,15 +13,9 @@ export const MenuItems = [
   },
   {
     title: 'Sobre',
-    url: '/about',
+    url: '/sobre',
     className: 'nav-links',
     icon: 'fa-solid fa-circle-info',
-  },
-  {
-    title: 'Contato',
-    url: '/contact',
-    className: 'nav-links',
-    icon: 'fa-solid fa-address-book',
   },
   {
     title: 'Cadastrar',

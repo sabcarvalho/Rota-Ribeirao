@@ -113,8 +113,9 @@ function mapPlaceToFrontend(backendPlace) {
     image: backendPlace.image, 
     address: `${backendPlace.street}, ${backendPlace.number} - ${backendPlace.district}, CEP: ${backendPlace.cep}` || 'Endereço não informado', 
     description: backendPlace.description,
-    rating: backendPlace.rating, 
+    rating: backendPlace.rating,
     priceLevel: backendPlace.priceLevel,
+    qntdReviews: backendPlace.qntd_reviews || 0,
     eventDate: backendPlace.evento ? backendPlace.evento.data_inicio.slice(0, 10) : '',
     occasion: backendPlace.occasion ? backendPlace.occasion.split(",") : [],
     active: backendPlace.active

@@ -31,7 +31,7 @@ export default function Register() {
       setUser(user)
       navigate('/')
     } catch (err) {
-      setError(err.message)
+      setError(err.message || 'Erro ao criar conta. Tente novamente.')
     } finally {
       setLoading(false)
     }
@@ -60,7 +60,7 @@ export default function Register() {
               type="text"
               placeholder="Seu nome"
               value={name}
-              onChange={e => setName(e.target.value)}
+              onChange={e => { setName(e.target.value); setError('') }}
               required
             />
           </div>
@@ -72,7 +72,7 @@ export default function Register() {
               type="email"
               placeholder="seu@email.com"
               value={email}
-              onChange={e => setEmail(e.target.value)}
+              onChange={e => { setEmail(e.target.value); setError('') }}
               required
             />
           </div>
@@ -84,7 +84,7 @@ export default function Register() {
               type="password"
               placeholder="Mínimo 4 caracteres"
               value={password}
-              onChange={e => setPassword(e.target.value)}
+              onChange={e => { setPassword(e.target.value); setError('') }}
               required
             />
           </div>
@@ -96,7 +96,7 @@ export default function Register() {
               type="password"
               placeholder="Repita a senha"
               value={confirm}
-              onChange={e => setConfirm(e.target.value)}
+              onChange={e => { setConfirm(e.target.value); setError('') }}
               required
             />
           </div>

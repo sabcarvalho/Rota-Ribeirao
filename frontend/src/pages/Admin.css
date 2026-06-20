@@ -1,5 +1,5 @@
 .admin-page {
-  padding-bottom: 60px;
+  padding: 90px 0 60px;
 }
 
 .admin-header {
@@ -131,7 +131,7 @@
 }
 
 .admin-place-link:hover {
-  color: var(--primary);
+  color: var(--accent);
 }
 
 .admin-delete-btn {
@@ -211,4 +211,76 @@
 
 .admin-status-btn--activate:hover {
   background-color: #449d44;
+}
+
+.admin-scraping-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.admin-scraping-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-scraping-msg {
+  color: #16a34a;
+  font-size: 0.9rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.admin-pending-card {
+  border-left: 4px solid var(--primary);
+  margin-bottom: 28px;
+}
+
+.admin-pending-card h2 {
+  color: var(--dark);
+}
+
+.admin-empty-msg {
+  color: var(--gray);
+  font-size: 0.95rem;
+  padding: 12px 0;
+}
+
+.admin-approve-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #16a34a;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  font-family: inherit;
+  margin-right: 8px;
+}
+
+.admin-approve-btn:hover {
+  background: #dcfce7;
+}
+
+.admin-new-place-section {
+  margin-top: 28px;
+}
+
+.admin-new-place-section > .btn {
+  margin-bottom: 0;
+}
+
+.admin-new-place-section .admin-form-card {
+  margin-top: 16px;
+  margin-bottom: 0;
 }

@@ -46,7 +46,7 @@
 }
 
 .place-card__name:hover {
-  color: var(--primary);
+  color: var(--accent);
 }
 
 .place-card__fav {
