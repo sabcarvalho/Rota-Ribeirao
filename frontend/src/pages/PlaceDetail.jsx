@@ -5,12 +5,11 @@ import { getPlaceReviews, addReview, calculateNewAverageRating } from '../servic
 import { useAuth } from '../context/AuthContext'
 import './PlaceDetail.css'
 
-function renderStars(rating, size = '1rem') {
+function renderStars(rating, className = '') {
   return Array.from({ length: 5 }, (_, i) => (
     <i
       key={i}
-      className={`fa-${i < Math.round(rating) ? 'solid' : 'regular'} fa-star`}
-      style={{ fontSize: size, color: 'var(--star)' }}
+      className={`fa-${i < Math.round(rating) ? 'solid' : 'regular'} fa-star detail-star${className ? ` ${className}` : ''}`}
     ></i>
   ))
 }
@@ -123,8 +122,8 @@ export default function PlaceDetail() {
 
   if (loading) {
     return (
-      <div className="page-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <i className="fa-solid fa-spinner fa-spin" style={{ fontSize: '2rem', color: 'var(--primary)' }}></i>
+      <div className="page-wrapper loading-center">
+        <i className="fa-solid fa-spinner fa-spin spinner-lg"></i>
       </div>
     )
   }
@@ -133,9 +132,13 @@ export default function PlaceDetail() {
 
   return (
     <div className="page-wrapper">
-      <div className="detail-hero" style={{
-        backgroundImage: `linear-gradient(rgba(26,26,46,0.7),rgba(26,26,46,0.85)), url(${place.image})`
-      }}>
+      <div className="detail-hero">
+        <img
+          className="detail-hero__bg"
+          src={place.image || `https://picsum.photos/seed/${place.id}/1200/400`}
+          alt=""
+          aria-hidden="true"
+        />
         <div className="container">
           <button className="detail-back" onClick={() => navigate(-1)}>
             <i className="fa-solid fa-arrow-left"></i> Voltar
@@ -147,12 +150,15 @@ export default function PlaceDetail() {
               <i className="fa-solid fa-location-dot"></i> {place.address}
             </p>
             <div className="detail-meta">
-              <span className="stars">{renderStars(place.rating, '1.1rem')}</span>
+              <span className="stars">{renderStars(place.rating, 'detail-star--lg')}</span>
               <strong>{place.rating?.toFixed(1) || '0.0'}</strong>
               <span className="detail-reviews-count">({reviews.length} avaliações)</span>
-              <span className="detail-price">
+              <span className="detail-price price-meter">
                 {Array.from({ length: 4 }, (_, i) => (
-                  <span key={i} style={{ opacity: i < place.priceLevel ? 1 : 0.3 }}>$</span>
+                  <span
+                    key={i}
+                    className={`price-meter__unit${i < place.priceLevel ? '' : ' price-meter__unit--off'}`}
+                  >$</span>
                 ))}
               </span>
               {user && (
@@ -238,13 +244,13 @@ export default function PlaceDetail() {
                     />
                   </div>
                   <div className="form-group checkbox-group">
-                    <label>
+                    <label className="checkbox-label">
                       <input
                         type="checkbox"
                         checked={isAnonymous}
                         onChange={e => setIsAnonymous(e.target.checked)}
-                      />{' '}
-                      Publicar de forma anônima
+                      />
+                      <span>Publicar de forma anônima</span>
                     </label>
                   </div>
                   <button type="submit" className="btn btn--primary" disabled={sending}>

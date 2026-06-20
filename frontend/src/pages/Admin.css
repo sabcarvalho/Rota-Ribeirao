@@ -53,6 +53,11 @@
   gap: 16px;
 }
 
+/* Linha com primeira coluna mais larga (ex: Rua + Número) */
+.admin-form__row--street {
+  grid-template-columns: 3fr 1fr;
+}
+
 .admin-checkboxes {
   display: flex;
   gap: 16px;
@@ -155,7 +160,8 @@
 }
 
 @media (max-width: 600px) {
-  .admin-form__row {
+  .admin-form__row,
+  .admin-form__row--street {
     grid-template-columns: 1fr;
   }
 }

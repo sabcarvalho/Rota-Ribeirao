@@ -329,12 +329,12 @@ export default function Admin() {
                   </div>
                 </div>
 
-                <div className="admin-form__row">
-                  <div className="form-group" style={{ flex: 3 }}>
+                <div className="admin-form__row admin-form__row--street">
+                  <div className="form-group">
                     <label>Rua / Avenida</label>
                     <input name="street" value={form.street || ''} onChange={handleChange} required placeholder="Ex: Av. Professor João Fiúsa" />
                   </div>
-                  <div className="form-group" style={{ flex: 1 }}>
+                  <div className="form-group">
                     <label>Número</label>
                     <input name="number" value={form.number || ''} onChange={handleChange} required placeholder="Ex: 1200" />
                   </div>
@@ -375,7 +375,7 @@ export default function Admin() {
                       <option value="evento">Evento</option>
                     </select>
                   </div>
-                  <div className="form-group" style={{ flex: 1 }}>
+                  <div className="form-group">
                     <label>URL da Imagem</label>
                     <input name="image" value={form.image || ''} onChange={handleChange} placeholder="Ex: https://linkdaimagem.com/foto.jpg" />
                   </div>
@@ -387,7 +387,7 @@ export default function Admin() {
                       <label>Data de Início (Evento)</label>
                       <input name="eventStartDate" type="date" value={form.eventStartDate || ''} onChange={handleChange} min="2026-01-01" max="2030-12-31" />
                     </div>
-                    <div className="form-group" style={{ flex: 1 }}>
+                    <div className="form-group">
                       <label>Data de Fim (Evento)</label>
                       <input name="eventFinishDate" type="date" value={form.eventFinishDate || ''} onChange={handleChange} min="2026-01-01" max="2030-12-31" />
                     </div>

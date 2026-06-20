@@ -1,0 +1,28 @@
+/* ============================================================
+   layout.css — Estrutura de página e tipografia de seção
+   Container central, espaçamento de página e títulos.
+   ============================================================ */
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.page-wrapper {
+  min-height: calc(100vh - 70px);
+  padding-top: 70px;
+}
+
+.section-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--dark);
+  margin-bottom: 8px;
+}
+
+.section-subtitle {
+  font-size: 1rem;
+  color: var(--gray);
+  margin-bottom: 40px;
+}
