@@ -16,6 +16,61 @@ class SearchPlacesOverpass():
             self.amenity = "marketplace"
         else:
             raise Exception("Tipo nao encontrado. Tipos esperados: bar, restaurante, cafe e mercado")
+        
+        self.heuristic_rules = {
+            "família": {
+                "amenity": ["ice_cream", "toy_library", "theme_park"],
+                "leisure": ["park", "playground", "water_park"],
+                "cuisine": ["pizza", "ice_cream", "burger", "buffet"]
+            },
+            "comemoração": {
+                "amenity": ["nightclub", "events_venue", "casino"],
+                "cuisine": ["steakhouse", "japanese", "seafood", "fine_dining"]
+            },
+            "amigos": {
+                "amenity": ["bar", "pub", "nightclub", "biergarten", "fast_food"],
+                "leisure": ["sports_centre", "bowling_alley", "stadium"],
+                "cuisine": ["burger", "pizza", "barbecue", "snack"]
+            },
+            "encontro": {
+                "amenity": ["cafe", "theatre", "cinema", "arts_centre"],
+                "tourism": ["museum", "gallery", "viewpoint"],
+                "cuisine": ["italian", "bistro", "sushi", "japanese", "fondue", "coffee_shop"]
+            }
+        }
+    def classify_by_tags(self, tags: dict) -> list:
+        occasions = set()
+        
+        amenity = tags.get("amenity", "").lower()
+        leisure = tags.get("leisure", "").lower()
+        cuisine = tags.get("cuisine", "").lower()
+        tourism = tags.get("tourism", "").lower()
+
+        for occasion, rules in self.heuristic_rules.items():
+            if amenity in rules.get("amenity", []):
+                occasions.add(occasion)
+            if leisure in rules.get("leisure", []):
+                occasions.add(occasion)
+            if tourism in rules.get("tourism", []):
+                occasions.add(occasion)
+                
+            for c in rules.get("cuisine", []):
+                if c in cuisine:
+                    occasions.add(occasion)
+
+        #se não cair em nada:
+        if not occasions:
+            if amenity in ["restaurant", "food_court"]:
+                #restaurantes geralmente servem para família e amigos
+                occasions.update(["família", "amigos"])
+            elif amenity in ["bar", "pub"]:
+                #bares servem para amigos e encontros
+                occasions.update(["amigos", "encontro"])
+            else:
+                #se nao tiver nenhuma tag util
+                occasions.add("amigos")
+
+        return ",".join(occasions)
     
     def search(self):
         query = f'[out:json];(nwr["amenity"~"{self.amenity}"](around:5000,-21.1767,-47.8208););out center;'
@@ -38,6 +93,7 @@ class SearchPlacesOverpass():
             for resultado in resultados:
                 descricao = f"Um excelente local da categoria {self.type_search} em Ribeirão Preto! "
                 tags = resultado.get('tags', {})
+                ocasioes = self.classify_by_tags(tags)
                 nome = tags.get('name', 'Sem nome')
                 cuisine = tags.get("cuisine")
                 website = tags.get("website")

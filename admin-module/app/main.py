@@ -37,8 +37,8 @@ oauth2_schema = OAuth2PasswordBearer(tokenUrl="auth/login-form")
 
 
 from app.auth_routes import auth_router
-from app.places_routes import places_router
+from app.favorites_routes import favorites_router
 
 #inclui-se dois tipos de rota (auth e places)
 app.include_router(auth_router) #autenticacao
-app.include_router(places_router) #obtencao de favoritos e robo do webscrapping
+app.include_router(favorites_router) #obtencao de favoritos e robo do webscrapping
