@@ -29,9 +29,7 @@ export default function Admin() {
   const [isCrawlerRunning, setIsCrawlerRunning] = useState(false)
   const fetchPlaces = () => {
     getPlacesAdmin()
-      .then(data => {
-        setPlaces(data)
-      })
+      .then(data => setPlaces(data))
       .catch(err => console.error("Erro ao buscar lugares:", err))
   }
   useEffect(() => {
@@ -48,7 +46,6 @@ export default function Admin() {
     return <div className="loading-screen">Verificando permissões...</div>
   }
 
-  // Se o loading acabou e não é admin, barra a renderização da página
   if (!user?.isAdmin) {
     return null
   }
@@ -119,10 +116,8 @@ crawlerMsg
         setSaving(false);
         return; 
       }
-
-      const dataInicio = new Date(payload.eventStartDate);
-      const dataFim = new Date(payload.eventFinishDate);
-
+      const dataInicio = new Date(payload.eventStartDate)
+      const dataFim    = new Date(payload.eventFinishDate)
       if (dataInicio > dataFim) {
         alert("Erro: A data de início não pode ser posterior à data de término!");
         setSaving(false);
@@ -158,11 +153,9 @@ crawlerMsg
 
   async function handleDelete(id) {
     if (!confirm('Remover este lugar?')) return
-  
-    const backupPlaces = [...places]
-    const nextPlaces = places.filter(p => p.id !== id)
 
-    setPlaces(nextPlaces)
+    const backupPlaces = [...places]
+    setPlaces(places.filter(p => p.id !== id))
 
     try {
       await deletePlace(id)
@@ -224,6 +217,11 @@ crawlerMsg
             <i className={`fa-solid fa-${showForm ? 'xmark' : 'plus'}`}></i>
             {showForm ? 'Cancelar' : 'Novo Lugar Manual'}
           </button>
+          {scrapingMsg && (
+            <span className="admin-scraping-msg">
+              <i className="fa-solid fa-circle-check"></i> {scrapingMsg}
+            </span>
+          )}
         </div>
 
         {/* MENSAGENS DE FEEDBACK */}

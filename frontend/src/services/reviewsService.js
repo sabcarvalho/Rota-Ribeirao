@@ -23,6 +23,27 @@ export async function getPlaceReviews(id_place) {
   }
 }
 
+export async function getUserReviews(id_usuario) {
+  try {
+    return await api.get('reviews', `/reviews/user/${id_usuario}`);
+  } catch (error) {
+    if (error.status === 401 || error.detail?.code === "TOKEN_EXPIRED") {
+      try {
+        await refreshToken();
+        return await api.get('reviews', `/reviews/user/${id_usuario}`);
+      } catch (refreshErr) {
+        if(refreshErr instanceof TokenExpiredError){
+          console.error("Refresh token também expirou. Forçando logout.");
+        }
+        throw refreshErr;
+      }
+    } else {
+      console.error("Erro na requisição: ", error);
+      throw error;
+    }
+  }
+}
+
 export async function addReview(id_place, data) {
   try {
     return await api.post('reviews', `/places/${id_place}/reviews`, data);

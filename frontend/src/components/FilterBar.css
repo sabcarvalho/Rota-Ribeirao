@@ -32,13 +32,13 @@
 }
 
 .filter-cat-btn:hover {
-  border-color: var(--primary);
-  color: var(--primary);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .filter-cat-btn.active {
-  background: var(--primary);
-  border-color: var(--primary);
+  background: var(--accent);
+  border-color: var(--accent);
   color: var(--white);
 }
 
@@ -64,7 +64,7 @@
 }
 
 .filter-select:focus {
-  border-color: var(--primary);
+  border-color: var(--accent);
 }
 
 .filter-clear-btn {

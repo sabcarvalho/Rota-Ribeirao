@@ -13,48 +13,62 @@ export default function Home() {
   const [filters, setFilters] = useState({
     category: '', priceLevel: '', occasion: '', minRating: '',
   })
+  const [stats, setStats] = useState({ restaurantes: 0, bares: 0, eventos: 0, avaliacoes: 0 })
 
   useEffect(() => {
-    async function carregarDadosHome() {
-      setLoading(true)
+    async function carregarStats() {
       try {
-        const promessas = [getPlaces(filters)]
-
-        if (user) {
-          console.log("Usuário logado. Preparando carga de favoritos...")
-          
-          const obterFavoritos = async () => {
-            let ids = getStorageCache('favorites')
-            if (ids === null) {
-              console.log("Cache expirou ou não existe. Buscando do banco...")
-              ids = await getFavorites()
-            }
-            return ids;
-          };
-
-          promessas.push(obterFavoritos())
-        }
-
-        const resultados = await Promise.all(promessas)
-        
-        const dadosLugares = resultados[0] //o primeiro sempre eh o getPlaces
-        setPlaces(dadosLugares);
-
-        if (user) {
-          const dadosFavoritos = resultados[1] //favoritos
-          setFavorites(dadosFavoritos || [])
-        } else {
-          setFavorites([]) // sem usuario, sem favoritos
-        }
+        const todos = await getPlaces({})
+        setStats({
+          restaurantes: todos.filter(p => p.category === 'restaurante').length,
+          bares:        todos.filter(p => p.category === 'bar').length,
+          eventos:      todos.filter(p => p.category === 'evento').length,
+          avaliacoes:   todos.reduce((soma, p) => soma + (p.qntdReviews || p.reviews?.length || 0), 0),
+        })
       } catch (error) {
-        console.error("Erro ao carregar os dados da pagina inicial:", error)
-        if (!user) 
-          setFavorites([]);
-      } finally {
-        setLoading(false);
+        console.error('Erro ao carregar estatísticas:', error)
       }
     }
-    carregarDadosHome();
+    carregarStats()
+  }, [])
+
+  useEffect(() => {
+    let cancelado = false
+
+    async function carregarLugares() {
+      setLoading(true)
+      try {
+        const dadosLugares = await getPlaces(filters)
+        if (!cancelado) setPlaces(dadosLugares)
+      } catch (error) {
+        console.error("Erro ao carregar os lugares:", error)
+      } finally {
+        if (!cancelado) setLoading(false)
+      }
+    }
+
+    // Os lugares carregam independentemente dos favoritos (não bloqueiam a grade)
+    carregarLugares()
+
+    if (!user) {
+      setFavorites([])
+      return () => { cancelado = true }
+    }
+
+    async function carregarFavoritos() {
+      try {
+        let ids = getStorageCache('favorites')
+        if (ids === null) {
+          ids = await getFavorites()
+        }
+        if (!cancelado) setFavorites(ids || [])
+      } catch (error) {
+        console.error("Erro ao carregar favoritos:", error)
+      }
+    }
+    carregarFavoritos()
+
+    return () => { cancelado = true }
   }, [filters, user])
 
   async function toggleFavorite(id, isFavorite) {
@@ -104,22 +118,22 @@ export default function Home() {
           <div className="stats-grid">
             <div className="stat-item">
               <i className="fa-solid fa-utensils"></i>
-              <strong>200+</strong>
+              <strong>{stats.restaurantes}</strong>
               <span>Restaurantes</span>
             </div>
             <div className="stat-item">
               <i className="fa-solid fa-martini-glass"></i>
-              <strong>80+</strong>
+              <strong>{stats.bares}</strong>
               <span>Bares & Pubs</span>
             </div>
             <div className="stat-item">
               <i className="fa-solid fa-calendar-days"></i>
-              <strong>50+</strong>
-              <span>Eventos / mês</span>
+              <strong>{stats.eventos}</strong>
+              <span>Eventos</span>
             </div>
             <div className="stat-item">
               <i className="fa-solid fa-star"></i>
-              <strong>5.000+</strong>
+              <strong>{stats.avaliacoes}</strong>
               <span>Avaliações</span>
             </div>
           </div>

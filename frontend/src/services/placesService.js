@@ -116,7 +116,7 @@ function mapPlaceToFrontend(backendPlace) {
     image: backendPlace.image, 
     address: `${backendPlace.street}, ${backendPlace.number} - ${backendPlace.district}, CEP: ${backendPlace.cep}` || 'Endereço não informado', 
     description: backendPlace.description,
-    rating: backendPlace.rating, 
+    rating: backendPlace.rating,
     priceLevel: backendPlace.priceLevel,
     eventDate: backendPlace.event ? backendPlace.event.eventStartDate.slice(0, 10) : '',
     eventStartDate: backendPlace.event ? backendPlace.event.eventStartDate.slice(0, 10) : '',
