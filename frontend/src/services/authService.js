@@ -64,9 +64,15 @@ export async function refreshToken(){
 
     localStorage.setItem('token', data.access_token)
   } catch (error){
-    // Qualquer falha no refresh invalida a sessão
-    logout()
-    throw new TokenExpiredError("Sessão expirada. Faça login novamente.")
+    if (error.detail?.code === "TOKEN_EXPIRED") {
+      logout()
+      throw new Error("Refresh Token expirado.")
+    } else{
+      // Mock para desenvolvimento
+      const user = { id: Date.now(), name, email, isAdmin: false }
+      localStorage.setItem('token', `mock-token-${Date.now()}`)
+    }
+    
   }
 }
 

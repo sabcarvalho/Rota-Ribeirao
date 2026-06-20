@@ -19,8 +19,9 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
 ACCESS_TOKEN_EXPIRE_MINUTES= int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
 
-FRONTEND_ORIGIN = os.getenv("FRONT_END_URL", "http://localhost:3000")
-PLACES_SERVICE_URL = os.getenv("PLACES_SERVICE_URL")
+FRONTEND_ORIGIN = os.getenv("FRONT_END_URL", "http://localhost:3000").rstrip('/')
+PLACES_SERVICE_URL = os.getenv("PLACES_SERVICE_URL").rstrip('/')
+KEY_TICKETMASTER = os.getenv("KEY_TICKETMASTER")
 
 #configurando o CORS para apenas aceitar o frontend
 app.add_middleware(
@@ -37,8 +38,10 @@ oauth2_schema = OAuth2PasswordBearer(tokenUrl="auth/login-form")
 
 
 from app.auth_routes import auth_router
-from app.places_routes import places_router
+from app.favorites_routes import favorites_router
+from app.crawler_routes import crawler_router
 
 #inclui-se dois tipos de rota (auth e places)
 app.include_router(auth_router) #autenticacao
-app.include_router(places_router) #obtencao de favoritos e robo do webscrapping
+app.include_router(favorites_router) #obtencao de favoritos
+app.include_router(crawler_router) #busca de lugares nas apis

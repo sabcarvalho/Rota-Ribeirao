@@ -1,4 +1,5 @@
 fastapi
+beautifulsoup4
 uvicorn[standard]
 sqlalchemy
 sqlalchemy-utils
@@ -13,3 +14,4 @@ python-jose[cryptography]
 argon2-cffi
 argon2-cffi-bindings
 requests
+ddgs
