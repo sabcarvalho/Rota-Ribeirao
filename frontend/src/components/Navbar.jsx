@@ -32,7 +32,9 @@ export default function Navbar() {
 
   return (
     <nav className='NavbarItems'>
-      <h1 className='navbar-logo'>Rota Ribeir&#227;o</h1>
+      <Link to='/' className='navbar-logo-link' onClick={() => setOpen(false)}>
+        <h1 className='navbar-logo'>Rota Ribeir&#227;o</h1>
+      </Link>
 
       <div className='menu-icon' onClick={() => setOpen(o => !o)}>
         <i className={open ? 'fa-solid fa-xmark' : 'fa-solid fa-bars'}></i>

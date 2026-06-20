@@ -14,14 +14,6 @@ const BADGE_COLOR = {
   evento: 'badge--red',
 }
 
-const CATEGORY_INFO = {
-  bar:         { icon: 'fa-martini-glass', label: 'Bares & Pubs' },
-  cafe:        { icon: 'fa-mug-hot',       label: 'Cafés' },
-  restaurante: { icon: 'fa-utensils',      label: 'Restaurantes' },
-  evento:      { icon: 'fa-calendar-days', label: 'Eventos' },
-  mercado:     { icon: 'fa-store',         label: 'Mercados' },
-}
-
 function formatarData(dataStr) {
   if (!dataStr) return ''
   const data = new Date(dataStr)
@@ -118,16 +110,6 @@ export default function Perfil() {
     ? (historico.reduce((s, i) => s + (i.rating || 0), 0) / totalAvaliacoes).toFixed(1)
     : '—'
   const categorias = [...new Set(historico.map(i => i.category).filter(Boolean))]
-
-  // Preferências: categorias mais avaliadas (ordenadas por frequência)
-  const freqCategorias = {}
-  historico.forEach(i => {
-    if (i.category) freqCategorias[i.category] = (freqCategorias[i.category] || 0) + 1
-  })
-  const preferencias = Object.entries(freqCategorias)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 3)
-    .map(([cat]) => cat)
 
   return (
     <div className="page-wrapper profile-page">
@@ -227,22 +209,36 @@ export default function Perfil() {
         </div>
 
         <div className="profile-section">
-          <h2 className="section-title">Preferências</h2>
-          <p className="section-subtitle">Com base no seu histórico, você curte mais</p>
-          {preferencias.length === 0 ? (
-            <p className="profile-prefs-empty">Avalie lugares para descobrirmos suas preferências.</p>
-          ) : (
-            <div className="profile-prefs">
-              {preferencias.map(cat => {
-                const info = CATEGORY_INFO[cat] || { icon: 'fa-location-dot', label: cat }
-                return (
-                  <div key={cat} className="pref-tag">
-                    <i className={`fa-solid ${info.icon}`}></i> {info.label}
-                  </div>
-                )
-              })}
+          <h2 className="section-title">Recomendações</h2>
+          <p className="section-subtitle">Lugares escolhidos pra você, com base no seu gosto</p>
+
+          <div className="recommendations-banner">
+            <i className="fa-solid fa-wand-magic-sparkles"></i>
+            <div className="recommendations-banner__text">
+              <strong>Recomendações personalizadas chegando em breve</strong>
+              <p>
+                Nosso sistema vai analisar suas avaliações e favoritos para sugerir
+                os lugares perfeitos para o seu perfil.
+              </p>
             </div>
-          )}
+          </div>
+
+          <div className="recommendations-grid">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="recommendation-card">
+                <div className="recommendation-card__img">
+                  <i className="fa-solid fa-location-dot"></i>
+                </div>
+                <div className="recommendation-card__body">
+                  <span className="recommendation-card__line recommendation-card__line--lg"></span>
+                  <span className="recommendation-card__line"></span>
+                  <span className="recommendation-card__badge">
+                    <i className="fa-solid fa-clock"></i> Em breve
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
       </div>

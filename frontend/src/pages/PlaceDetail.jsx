@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getPlaceById, toggleFavoritePlace, getFavorites, getStorageCache,setStorageCache } from '../services/placesService'
-import { getPlaceReviews, addReview, calculateNewAverageRating } from '../services/reviewsService'
+import { getPlaceReviews, addReview, deleteReview, calculateNewAverageRating } from '../services/reviewsService'
 import { useAuth } from '../context/AuthContext'
 import './PlaceDetail.css'
 
@@ -120,6 +120,33 @@ export default function PlaceDetail() {
     }
   }
 
+  function podeExcluir(review) {
+    if (!user) return false
+    return user.isAdmin || String(user.id) === String(review.id_usuario)
+  }
+
+  async function handleDeleteReview(reviewId) {
+    if (!confirm('Excluir esta avaliação?')) return
+
+    const backup = reviews
+    const restantes = reviews.filter(r => r.id !== reviewId)
+
+    // Atualização otimista: remove da lista e recalcula a média exibida
+    setReviews(restantes)
+    const novaMedia = restantes.length
+      ? Number((restantes.reduce((s, r) => s + r.rating, 0) / restantes.length).toFixed(1))
+      : 0
+    setPlace(prev => ({ ...prev, rating: novaMedia }))
+
+    try {
+      await deleteReview(reviewId)
+    } catch (error) {
+      console.error("Erro ao excluir avaliação:", error)
+      setReviews(backup)
+      alert("Não foi possível excluir a avaliação. Tente novamente.")
+    }
+  }
+
   if (loading) {
     return (
       <div className="page-wrapper loading-center">
@@ -208,6 +235,16 @@ export default function PlaceDetail() {
                         <span className="stars review-stars">
                           {renderStars(review.rating)}
                         </span>
+                        {podeExcluir(review) && (
+                          <button
+                            className="review-delete-btn"
+                            onClick={() => handleDeleteReview(review.id)}
+                            aria-label="Excluir avaliação"
+                            title="Excluir avaliação"
+                          >
+                            <i className="fa-solid fa-trash"></i>
+                          </button>
+                        )}
                       </div>
                       <p className="review-comment">{review.comment}</p>
                     </div>

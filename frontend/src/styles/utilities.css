@@ -48,6 +48,18 @@
   color: var(--primary);
 }
 
+/* Tela/área de carregamento (ex.: verificação de permissões) */
+.loading-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 70px);
+  padding: 90px 20px 60px;
+  color: var(--gray);
+  font-size: 1.05rem;
+  font-weight: 500;
+}
+
 /* Medidor de preço: $ ativos vs. esmaecidos (1-4)
    Compartilhado por PlaceCard e PlaceDetail. */
 .price-meter__unit {

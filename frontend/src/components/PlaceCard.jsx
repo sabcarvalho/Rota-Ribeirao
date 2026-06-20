@@ -86,8 +86,14 @@ export default function PlaceCard({ place, onToggleFavorite, isFavorite }) {
         )}
 
         <div className="place-card__meta">
-          <span className="stars">{renderStars(place.rating)}</span>
-          <span className="place-card__rating-num">{place.rating?.toFixed(1)}</span>
+          {place.qntdReviews || place.rating ? (
+            <>
+              <span className="stars">{renderStars(place.rating)}</span>
+              <span className="place-card__rating-num">{place.rating?.toFixed(1)}</span>
+            </>
+          ) : (
+            <span className="place-card__no-reviews">Ainda não possui avaliações</span>
+          )}
           <span className="place-card__price">{renderPrice(place.priceLevel)}</span>
         </div>
       </div>

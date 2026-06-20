@@ -236,6 +236,23 @@
   margin-left: auto;
 }
 
+.review-delete-btn {
+  background: none;
+  border: none;
+  color: #c4b5bd;
+  font-size: 0.95rem;
+  cursor: pointer;
+  padding: 4px 7px;
+  margin-left: 8px;
+  border-radius: 6px;
+  transition: var(--transition);
+}
+
+.review-delete-btn:hover {
+  color: #dc2626;
+  background: #fef2f2;
+}
+
 .review-comment {
   color: #444;
   font-size: 0.9rem;

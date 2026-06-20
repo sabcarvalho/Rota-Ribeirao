@@ -279,7 +279,7 @@ crawlerMsg
                   <select name="category" value={form.category} onChange={handleChange}>
                     <option value="restaurante">Restaurante</option>
                     <option value="bar">Bar</option>
-                    <option value="café">Café</option>
+                    <option value="cafe">Café</option>
                     <option value="evento">Evento</option>
                     <option value="mercado">Mercado</option>
                   </select>
