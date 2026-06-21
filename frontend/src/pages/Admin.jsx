@@ -279,7 +279,7 @@ crawlerMsg
                   <select name="category" value={form.category} onChange={handleChange}>
                     <option value="restaurante">Restaurante</option>
                     <option value="bar">Bar</option>
-                    <option value="café">Café</option>
+                    <option value="cafe">Café</option>
                     <option value="evento">Evento</option>
                     <option value="mercado">Mercado</option>
                   </select>
@@ -311,7 +311,7 @@ crawlerMsg
               <div className="admin-form__row">
                 <div className="form-group">
                   <label>Nota inicial (1-5)</label>
-                  <input name="rating" type="number" min="1" max="5" step="0.1" value={form.rating} onChange={handleChange} />
+                  <input name="rating" type="number" min="0" max="5" step="0.1" value={form.rating} onChange={handleChange} />
                 </div>
                 <div className="form-group">
                   <label>Faixa de preço (1-4)</label>
@@ -338,6 +338,16 @@ crawlerMsg
                 <div className="form-group form-group--sm">
                   <label>URL da Imagem</label>
                   <input name="image" value={form.image || ''} onChange={handleChange} placeholder="Ex: https://linkdaimagem.com/foto.jpg" />
+                  {form.image && (
+                    <div style={{ marginTop: '10px', textAlign: 'center' }}>
+                      <img 
+                        src={form.image} 
+                        alt="Preview" 
+                        style={{ maxWidth: '100%', maxHeight: '150px', borderRadius: '8px', objectFit: 'cover' }}
+                        onError={(e) => { e.target.style.display = 'none'; }} // Oculta se a URL for quebrada
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
               

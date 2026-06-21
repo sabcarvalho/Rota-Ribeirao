@@ -58,22 +58,10 @@ export function logout() {
 }
 
 export async function refreshToken(){
-  try {
-    const r_token = localStorage.getItem('refreshToken')
-    const data = await api.post('admin', '/auth/refresh', {refresh_token: r_token })
+  const r_token = localStorage.getItem('refreshToken')
+  const data = await api.post('admin', '/auth/refresh', {refresh_token: r_token })
 
-    localStorage.setItem('token', data.access_token)
-  } catch (error){
-    if (error.detail?.code === "TOKEN_EXPIRED") {
-      logout()
-      throw new Error("Refresh Token expirado.")
-    } else{
-      // Mock para desenvolvimento
-      const user = { id: Date.now(), name, email, isAdmin: false }
-      localStorage.setItem('token', `mock-token-${Date.now()}`)
-    }
-    
-  }
+  localStorage.setItem('token', data.access_token)
 }
 
 export function getStoredToken() {

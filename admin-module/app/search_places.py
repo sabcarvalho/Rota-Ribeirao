@@ -124,7 +124,7 @@ class SearchPlacesOverpass:
     def _buscar_imagem(self, nome: str) -> str:
         """Busca a primeira imagem no DuckDuckGo de forma segura."""
         nome_formatado = nome.replace(" ", "+")
-        query = f"{nome_formatado}+ribeirao+preto+{self.categoria_schema}"
+        query = f"{nome_formatado}+ribeirao+preto+{self.categoria_schema}+fachada+estabelecimento"
         
         try:  
             resultados = list(DDGS().images(

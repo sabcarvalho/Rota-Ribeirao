@@ -225,13 +225,6 @@ def update_place(
         elif key == "eventStartDate": key = "data_inicio"
         elif key == "eventFinishDate": key = "data_fim"
 
-        # Se o admin enviar uma atualização de status, assegura a consistência
-        if key == "status":
-            if value == "ativo":
-                db_place.ativo = True
-            else:
-                db_place.ativo = False
-
         setattr(db_place, key, value)
 
     session.commit()

@@ -106,9 +106,6 @@ export const MOCK_PLACES = [
 function mapPlaceToFrontend(backendPlace) {
   if (!backendPlace) return null
 
-  if(backendPlace.event)
-    console.log(backendPlace.event)
-
   return {
     id: backendPlace.id,
     name: backendPlace.name,                               
@@ -209,78 +206,28 @@ export async function getPlaceById(id) {
 }
 
 export async function toggleFavoritePlace(id_place, isFav) {
-  try {
-    let response = null
-    console.log(isFav)
-    if(isFav){
-      response = await api.post('admin', `/favorites/${id_place}`, {})
-    }else{
-      response = await api.delete('admin', `/favorites/${id_place}`)
-    }
-    
-    return response
-
-  } catch (error) {
-    if (error.detail?.code === "TOKEN_EXPIRED") {
-      try {
-        await refreshToken(); 
-        if(isFav){
-          response = await api.post('admin', `/favorites/${id_place}`, {})
-        }else{
-          response = await api.delete('admin', `/favorites/${id_place}`)
-        }
-        return response
-      } catch (refreshErr) {
-        console.error("Refresh token também expirou. Forçando logout.");
-        throw refreshErr;
-      }
-    } else{
-      console.error("Erro ao favoritar o lugar: ", error)
-      throw error
-    }
-    
+  let response = null
+  console.log(isFav)
+  if(isFav){
+    response = await api.post('admin', `/favorites/${id_place}`, {})
+  }else{
+    response = await api.delete('admin', `/favorites/${id_place}`)
   }
+  
+  return response
 }
 export async function getPlacesAdmin(){
-  try {
-
-    const response = await api.get('places', `/admin/places`)
-    return response.map(mapPlaceToFrontend)
-  } catch (error) {
-    console.warn("Usando fallback de dados mockados para listagem de lugares", error)
-    
-    let places = [...MOCK_PLACES]
-    return places
-  }
+  const response = await api.get('places', `/admin/places`)
+  return response.map(mapPlaceToFrontend)
 }
 
 export async function getFavorites() {
-  try {
-    const response = await api.get('admin', `/favorites`)
-    let apenasIds = []
-    if(response)
-      apenasIds = response.map(item => item.place_id)
-    setStorageCache("favorites", apenasIds, 30)
-    return apenasIds
-  } catch (error) {
-    if (error.detail?.code === "TOKEN_EXPIRED") {
-      try {
-        await refreshToken(); 
-        const response = await api.get('admin', `/favorites`)
-        let apenasIds = []
-        if(response)
-          apenasIds = response.map(item => item.place_id)
-        setStorageCache("favorites", apenasIds, 30)
-        return apenasIds;
-      } catch (refreshErr) {
-        console.error("Refresh token também expirou. Forçando logout.");
-        throw refreshErr;
-      }
-    } else{
-      console.error("Erro ao favoritar o lugar: ", error)
-      throw error
-    }
-  }
+  const response = await api.get('admin', `/favorites`)
+  let apenasIds = []
+  if(response)
+    apenasIds = response.map(item => item.place_id)
+  setStorageCache("favorites", apenasIds, 30)
+  return apenasIds
 }
 
 export function setStorageCache(key, value, ttlInMinutes) {
@@ -314,128 +261,27 @@ export function getStorageCache(key) {
 
 export async function createPlace(data) {
   const new_data = mapPlaceToBackend(data)
-  try {
-    
-    const response = await api.post('places', '/places', new_data)
-    return  mapPlaceToFrontend(response)
-
-  } catch (error) {
-    if (error.status === 401) {
-      try {
-        await refreshToken(); 
-        const response = await api.post('places', '/places', new_data)
-        return  mapPlaceToFrontend(response)
-      } catch (refreshErr) {
-        console.error("Refresh token também expirou. Forçando logout.");
-        throw refreshErr;
-      }
-    } else{
-      console.error("Erro ao criar o lugar: ", error)
-      throw error
-    }
-  }
+  const response = await api.post('places', '/places', new_data)
+  return  mapPlaceToFrontend(response)
 }
 export async function updatePlace(id_place, data) {
   const new_data = mapPlaceToBackend(data)
-  try {
-    const response = await api.patch('places', `/places/${id_place}`, new_data)
-    return  mapPlaceToFrontend(response)
-  } catch (error) {
-    if (error.status === 401) {
-      try {
-        await refreshToken(); 
-        const response = await api.patch('places', `/places/${id_place}`, new_data)
-        return  mapPlaceToFrontend(response)
-      } catch (refreshErr) {
-        console.error("Refresh token também expirou. Forçando logout.");
-        throw refreshErr;
-      }
-    } else{
-      console.error("Erro ao criar o lugar: ", error)
-      throw error
-    }
-  }
+  const response = await api.patch('places', `/places/${id_place}`, new_data)
+  return mapPlaceToFrontend(response)
 }
 export async function startSearchPlaces(type_place) {
-  try {
-    const response = await api.post('admin', `/crawlers/places/${type_place}`, {})
-    return response
-  } catch (error) {
-    if (error.status === 401) {
-      try {
-        await refreshToken(); 
-        const response = await api.post('admin',`/crawlers/places/${type_place}`, {})
-        return response
-      } catch (refreshErr) {
-        console.error("Refresh token também expirou. Forçando logout.");
-        throw refreshErr;
-      }
-    } else{
-      console.error("Erro ao disparar busca de lugares: ", error)
-      throw error
-    }
-  }
+  return await api.post('admin', `/crawlers/places/${type_place}`, {})
 }
 export async function startSearchEvents() {
-  try {
-    const response = await api.post('admin', '/crawlers/events', {})
-    return response
-  } catch (error) {
-    if (error.status === 401) {
-      try {
-        await refreshToken(); 
-        const response = await api.post('admin','/crawlers/events', {})
-        return response
-      } catch (refreshErr) {
-        console.error("Refresh token também expirou. Forçando logout.");
-        throw refreshErr;
-      }
-    } else{
-      console.error("Erro ao disparar busca de eventos: ", error)
-      throw error
-    }
-  }
+  return await api.post('admin', '/crawlers/events', {})
 }
 
 export async function deletePlace(id) {
-  try {
-    return await api.delete('places', `/places/${id}`)
-  } catch (error) {
-    if (error.status === 401) {
-      try {
-        await refreshToken(); 
-        return await api.delete('places', `/places/${id}`)
-      } catch (refreshErr) {
-        console.error("Refresh token também expirou. Forçando logout.");
-        throw refreshErr;
-      }
-    } else{
-      console.error("Erro ao deletar o lugar: ", error)
-      throw error
-    }
-  }
+  return await api.delete('places', `/places/${id}`)
 }
 export async function updateStatusPlace(id, newStatus) {
-  try {
-    if(newStatus)
-      return await api.post('places', `/places/${id}/activate`, {})
-    else
-      return await api.post('places', `/places/${id}/deactivate`, {})
-  } catch (error) {
-    if (error.status === 401) {
-      try {
-        await refreshToken(); 
-        if(newStatus)
-      return await api.post('places', `/places/${id}/activate`, {})
-    else
-      return await api.post('places', `/places/${id}/deactivate`, {})
-      } catch (refreshErr) {
-        console.error("Refresh token também expirou. Forçando logout.");
-        throw refreshErr;
-      }
-    } else{
-      console.error("Erro ao deletar o lugar: ", error)
-      throw error
-    }
-  }
+  if(newStatus)
+    return await api.post('places', `/places/${id}/activate`, {})
+  else
+    return await api.post('places', `/places/${id}/deactivate`, {})
 }

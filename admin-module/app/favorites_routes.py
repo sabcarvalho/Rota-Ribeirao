@@ -92,7 +92,7 @@ async def delete_favorite_place(id_lugar: int, usuario: Usuario = Depends(verifi
 
     session.delete(favorito)
     session.commit()
-    return {"detail": "Lugar removido dos favoritos"}
+    return {"detail": "Lugar removido dos favoritos."}
 
 @favorites_router.delete("/place/{id_lugar}")
 async def delete_favorite_place_all(id_lugar: int, usuario: Usuario = Depends(verificar_token), session: Session = Depends(get_session)):

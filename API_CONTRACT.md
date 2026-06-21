@@ -89,7 +89,7 @@ Cadastro de novo usuário.
 
 ## Favoritos
 
-### GET `/places/favorites`
+### GET `/favorites`
 Retorna todos os lugares favoritados pelo usuário logado.
 
 **Response 200:**
@@ -103,7 +103,7 @@ Retorna todos os lugares favoritados pelo usuário logado.
 ```
 ---
 
-### POST `/places/add_favorite/:id_lugar`
+### POST `/favorites/:id_lugar`
 Adiciona um favorito na tabela Favorito de um dado usuário logado, recebendo o id do local sendo favoritado.
 
 **Response 200:**
@@ -118,21 +118,21 @@ Adiciona um favorito na tabela Favorito de um dado usuário logado, recebendo o 
 
 ---
 
-### DELETE `/places/delete_favorite/place/:id_lugar`
+### DELETE `/favorites/:id_lugar`
 Deleta um Favorito de um dado usuário logado, referente ao id do local passado.
 
 **Response 200:**
 ```json
 [
   {
-    "detail": "Favorito removido com sucesso.",
+    "detail": "Lugar removido dos favoritos.",
   }
 ]
 ```
 
 ---
 
-### DELETE `/places/delete_favorite/place/all/:id_lugar`
+### DELETE `/favorites/place/:id_lugar`
 Deleta todos os favoritos vinculados ao id do local passado. Apenas realizada por administradores.
 
 **Response 200:**
@@ -149,25 +149,23 @@ Deleta todos os favoritos vinculados ao id do local passado. Apenas realizada po
 
 ---
 
-## Lugares
+## Lugares (Público)
 
-### GET `/search_place`
-Lista todos os lugares com filtros opcionais via query params.
+### GET `/places`
+Lista todos os lugares ativos. Filtra automaticamente locais desativados e eventos que já passaram.
 
 **Query params (todos opcionais):**
 | Param | Tipo | Exemplo | Descrição |
 |---|---|---|---|
-| `name` | string | `Nome do lugar` | Filtra por nome |
-| `category` | string | `restaurante` | Filtra por categoria |
+| `ids` | list[int] | `?ids=1&ids=2` | Busca locais específicos por ID |
+| `name` | string | `Nome do lugar` | Filtra por nome (parcial) |
+| `category` | string | `restaurante` | Filtra por categoria exata |
 | `price_level` | number | `2` | Filtra por preço máximo (1–4) |
-| `occasion` | string | `familia` | Filtra por ocasião |
+| `occasion` | string | `familia` | Filtra por ocasião (parcial) |
 | `min_rating` | number | `4.0` | Filtra por nota mínima |
-| `event_type` | string | `fixo` | Filtra se é fixo ou evento |
+| `event_type` | string | `fixo` | Filtra se é `fixo` ou `evento` |
 
 **Categorias válidas:** `restaurante`, `bar`, `cafe`, `evento`, `mercado`
-
-**Ocasiões válidas:** `familia`, `encontro`, `comemoracao`, `amigos`
-
 **Tipos válidos:** `fixo`, `evento`
 
 **Response 200:**
@@ -181,14 +179,16 @@ Lista todos os lugares com filtros opcionais via query params.
     "district": "Ribeirânia",
     "cep": "14025-020",
     "category": "restaurante",
-    "occasion": "encontro,comemoracao,amigos",
+    "occasion": "encontro,comemoracao",
     "priceLevel": 3,
     "rating": 4.7,
-    "description": "Tradicional restaurante de culinária brasileira...",
+    "qntd_reviews": 12,
+    "description": "Tradicional restaurante de culinária...",
     "type": "fixo",
-    "image": "https://dlnews.com.br/imagens_noticias/img_1104072020173149.jpg",
+    "image": "[https://url.com/foto.jpg](https://url.com/foto.jpg)",
     "event": null,
-    "active": true
+    "active": true,
+    "status": "ativo"
   }
 ]
 
@@ -199,14 +199,20 @@ Lista todos os lugares com filtros opcionais via query params.
 
 ---
 
-### GET `/search_place/ids`
-Retorna detalhes de todos os lugares passados na requisicao.
+### GET `/admin/places`
+Retorna a lista completa de lugares, incluindo os com status desativado e pendente (trazidos pela busca automática). **Requer token de admin.**
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
 
 **Response 200:**
 ```json
 [
   {
     "id": 1,
+    "status": "ativo",
     "name": "Restaurante Sinhá Moça",
     "street": "Av. Costábile Romano",
     "number": "2201",
@@ -221,41 +227,15 @@ Retorna detalhes de todos os lugares passados na requisicao.
     "image": "https://dlnews.com.br/imagens_noticias/img_1104072020173149.jpg",
     "event": null,
     "active": true
-  }
-]
-```
-
-**Response 404:**
-```json
-{
-  "detail": "Lugar não encontrado"
-}
-```
-
----
-
-### GET `/admin/search_place/`
-Retorna detalhes de todos os lugares, mesmos aqueles desativados. **Requer token de admin.**
-
-**Response 200:**
-```json
-[
+  },
   {
-    "id": 1,
-    "name": "Restaurante Sinhá Moça",
+    "id": 2,
+    "status": "pendente",
+    "name": "Restaurante 2",
     "street": "Av. Costábile Romano",
     "number": "2201",
     "district": "Ribeirânia",
-    "cep": "14025-020",
-    "category": "restaurante",
-    "occasion": "encontro,comemoracao,amigos",
-    "priceLevel": 3,
-    "rating": 4.7,
-    "description": "Tradicional restaurante de culinária brasileira...",
-    "type": "fixo",
-    "image": "https://dlnews.com.br/imagens_noticias/img_1104072020173149.jpg",
-    "event": null,
-    "active": true
+    ...
   }
 ]
 ```
@@ -269,7 +249,7 @@ Retorna detalhes de todos os lugares, mesmos aqueles desativados. **Requer token
 
 ---
 
-### POST `/add_place`
+### POST `/places`
 Cria um novo lugar. **Requer token de admin.**
 
 **Headers:**
@@ -294,6 +274,7 @@ Authorization: Bearer <token>
   "image": "https://url-opcional.com/foto.jpg",
   "eventStartDate": "2026-06-08T01:04:10.110Z",
   "eventFinishDate": "2026-06-08T01:04:10.110Z",
+  "status": "ativo",
 }
 ```
 
@@ -301,6 +282,50 @@ Authorization: Bearer <token>
 ```json
 {
   "id": 9,
+  "status": "ativo",
+  "name": "Novo Restaurante",
+  "street": "Rua Exemplo",
+  "number": "100",
+  "district": "Bairro",
+  "cep": "14000-00",
+  "category": "restaurante",
+  ...
+}
+```
+---
+
+### PATCH `/places/:id_lugar`
+Atualiza informações de um lugar. **Requer token de admin.**
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Request body:**
+```json
+{
+  "id": 1,
+  "name": [opcional],
+  "street": [opcional],
+  "number":[opcional],
+  "district": [opcional],
+  "cep": [opcional],
+  "category":[opcional],
+  "occasion": [opcional],
+  "priceLevel": [opcional],
+  "description": [opcional],
+  "image":[opcional],
+  "eventStartDate": [opcional],
+  "eventFinishDate": [opcional],
+}
+```
+
+**Response 200:**
+```json
+{
+  "id": 9,
+  "status": "ativo",
   "name": "Novo Restaurante",
   "street": "Rua Exemplo",
   "number": "100",
@@ -313,7 +338,7 @@ Authorization: Bearer <token>
 
 ---
 
-### POST `/deactivate_place/:id`
+### POST `/places/:id/deactivate`
 Desativa um lugar. **Requer token de admin.**
 
 **Headers:**
@@ -330,7 +355,7 @@ Authorization: Bearer <token>
 
 ---
 
-### POST `/ativate_place/:id`
+### POST `/places/:id/activate`
 Ativa um lugar. **Requer token de admin.**
 
 **Headers:**
@@ -347,7 +372,7 @@ Authorization: Bearer <token>
 
 ---
 
-### DELETE `/delete_place/:id`
+### DELETE `/places/:id`
 Remove um lugar. **Requer token de admin.**
 
 **Headers:**
@@ -359,6 +384,24 @@ Authorization: Bearer <token>
 ```json
 {
   "detail": "Lugar removido com sucesso"
+}
+```
+
+---
+### PUT `/internal/places/:id/rating`
+Atualiza a nota e a quantidade de reviews de um lugar. **Chamado apenas pelo serviço de Avaliações (reviews).**
+
+**Request body**
+```
+{
+  "nota": 4.5,
+  "qntd_reviews": 15
+}
+```
+**Response 200:**
+```json
+{
+  "detail": "Nota e quantidade de reviews atualizadas com sucesso"
 }
 ```
 

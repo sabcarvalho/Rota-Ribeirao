@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { jwtDecode } from 'jwt-decode'
 import { refreshToken } from '../services/authService'
+import { TokenExpiredError } from '../services/errors_classes'
 
 const AuthContext = createContext(null)
 
@@ -21,7 +22,6 @@ export function AuthProvider({ children }) {
         const margemSeguranca = 15
         const currentTime = Date.now() / 1000
 
-        // Token expirado (ou prestes a) -> tenta renovar e re-decodificar
         if (!decoded.exp || (currentTime + margemSeguranca) > decoded.exp) {
           await refreshToken()
           const novoToken = localStorage.getItem('token')
@@ -34,11 +34,14 @@ export function AuthProvider({ children }) {
           email: decoded.email || '',
           isAdmin: decoded.isAdmin === 'True' || decoded.isAdmin === true,
         })
-      } catch {
-        // Token inválido ou sessão expirada -> desloga silenciosamente
-        localStorage.removeItem('token')
-        localStorage.removeItem('refreshToken')
-        localStorage.removeItem('favorites')
+      } catch (error){
+        if(error instanceof TokenExpiredError){
+          alert("Sessão expirada. Realize novamente o login.")
+          localStorage.removeItem('token')
+          localStorage.removeItem('refreshToken')
+          localStorage.removeItem('favorites')
+        }
+        
         setUser(null)
       } finally {
         setLoading(false)
