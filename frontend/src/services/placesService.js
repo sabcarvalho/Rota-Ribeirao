@@ -57,10 +57,15 @@ function mapPlaceToBackend(frontendPlace) {
 }
 
 
+// Ordenação alfabética por nome (ignora maiúsculas e acentos, regra pt-BR)
+function ordenarPorNome(a, b) {
+  return (a.name || '').localeCompare(b.name || '', 'pt-BR', { sensitivity: 'base' })
+}
+
 export async function getPlaces(filters = {}) {
   try {
     const params = new URLSearchParams()
-    
+
     if (filters.name)        params.set('name',        filters.name)
     if (filters.eventType)        params.set('event_type',        filters.eventType)
     if (filters.category)    params.set('category',    filters.category)
@@ -69,16 +74,16 @@ export async function getPlaces(filters = {}) {
     if (filters.minRating)   params.set('min_rating',  filters.minRating)
 
     const response = await api.get('places', `/places?${params}`)
-    return response.map(mapPlaceToFrontend)
+    return response.map(mapPlaceToFrontend).sort(ordenarPorNome)
   } catch (error) {
     console.warn("Usando fallback de dados mockados para listagem de lugares", error)
-    
+
     let places = [...MOCK_PLACES]
     if (filters.category)  places = places.filter(p => p.category === filters.category)
     if (filters.priceLevel) places = places.filter(p => p.priceLevel <= Number(filters.priceLevel))
     if (filters.occasion)  places = places.filter(p => p.occasion.includes(filters.occasion))
     if (filters.minRating) places = places.filter(p => p.rating >= Number(filters.minRating))
-    return places
+    return places.sort(ordenarPorNome)
   }
 }
 
