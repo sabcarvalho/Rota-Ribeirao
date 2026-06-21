@@ -54,7 +54,7 @@ async function request(service, path, options = {}) {
 
   } catch (error) {
     /// Intercepta erros de autenticação e tenta reprocessar caso não seja um reenvio (_isRetry)
-    if ((error instanceof TokenExpiredError || error.status === 401) && !options._isRetry) {
+    if ((error instanceof TokenExpiredError) && !options._isRetry) {
       try {
         //O import dinâmico resolve a dependência circular com o authService
         const { refreshToken } = await import('./authService')

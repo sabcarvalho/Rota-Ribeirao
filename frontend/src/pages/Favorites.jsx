@@ -32,7 +32,6 @@ export default function Favorites() {
             setFavoritePlaces(lugares)
           else
             setFavoritePlaces([lugares])
-          console.log(lugares)
         }
       } catch (error) {
         console.error("Erro ao carregar tela de favoritos:", error)
