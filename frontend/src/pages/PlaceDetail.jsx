@@ -107,7 +107,7 @@ export default function PlaceDetail() {
       const payload = { rating: reviewRating, comment: reviewComment, is_anonymous: isAnonymous }
       const newReview = await addReview(place.id, payload)
       
-      // Atualização otimista: insere a avaliação e calcula nova nota
+      // insere a avaliação e calcula nova nota
       setReviews(prev => [newReview, ...prev])
       
       const novaNota = calculateNewAverageRating(place.rating, reviews.length, reviewRating)
@@ -135,7 +135,7 @@ export default function PlaceDetail() {
     const backup = reviews
     const restantes = reviews.filter(r => r.id !== reviewId)
 
-    // Atualização otimista: remove da lista e recalcula a média exibida
+    // Remove da lista e recalcula a média exibida
     setReviews(restantes)
     const novaMedia = restantes.length
       ? Number((restantes.reduce((s, r) => s + r.rating, 0) / restantes.length).toFixed(1))

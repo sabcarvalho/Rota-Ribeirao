@@ -122,7 +122,7 @@ def get_place_reviews(id_place: int, session: Session = Depends(get_session)):
 
 @app.get("/reviews/count")
 def count_reviews(session: Session = Depends(get_session)):
-    """Retorna o total de avaliações existentes no sistema (fonte da verdade)."""
+    """Retorna o total de avaliações existentes no sistema."""
     total = session.query(Review).count()
     return {"total": total}
 

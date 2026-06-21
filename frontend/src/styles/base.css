@@ -12,7 +12,6 @@
 :root {
   --primary: #837b9c;
   --primary-dark: #6a319c;
-  /* Roxo de marca para superfícies com TEXTO BRANCO (contraste AA ≥ 4,5:1) */
   --accent: #6c4aa0;
   --accent-dark: #573c84;
   --dark: #392052;
@@ -55,8 +54,7 @@ img {
   display: block;
 }
 
-/* Acessibilidade — contorno de foco visível apenas na navegação por teclado.
-   :focus-visible não dispara em cliques de mouse, evitando contornos indesejados. */
+/* Acessibilidade — contorno de foco visível apenas na navegação por teclado. */
 *:focus {
   outline: none;
 }

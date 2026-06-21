@@ -57,7 +57,7 @@ export default function Home() {
       }
     }
 
-    // Os lugares carregam independentemente dos favoritos (não bloqueiam a grade)
+    // Os lugares carregam independentemente dos favoritos
     carregarLugares()
 
     if (!user) {

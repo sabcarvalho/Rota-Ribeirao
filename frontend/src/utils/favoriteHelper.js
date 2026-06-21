@@ -17,7 +17,7 @@ export async function carregarFavoritos() {
 }
 
 /**
- * Gerencia a ação de favoritar/desfavoritar de forma otimista
+ * Gerencia a ação de favoritar/desfavoritar
  */
 export async function toggleFavorite({
   id,

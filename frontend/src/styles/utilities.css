@@ -60,8 +60,6 @@
   font-weight: 500;
 }
 
-/* Medidor de preço: $ ativos vs. esmaecidos (1-4)
-   Compartilhado por PlaceCard e PlaceDetail. */
 .price-meter__unit {
   opacity: 1;
 }

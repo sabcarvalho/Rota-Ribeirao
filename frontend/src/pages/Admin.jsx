@@ -70,7 +70,7 @@ export default function Admin() {
     try {
       const novoStatusStr = isActivating ? 'ativo' : 'desativado'
 
-      // Atualização otimista na tela
+      // Atualização  na tela
       setPlaces(prevPlaces => 
         prevPlaces.map(p => p.id === id ? { ...p, status: novoStatusStr } : p)
       )
