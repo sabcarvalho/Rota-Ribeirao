@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import PlaceCard from '../components/PlaceCard'
 import { useAuth } from '../context/AuthContext'
 import FilterBar from '../components/FilterBar'
-import { getPlaces, getFavorites, getStorageCache, setStorageCache, toggleFavoritePlace} from '../services/placesService'
+import { getPlaces } from '../services/placesService'
+import { carregarFavoritos, toggleFavorite as toggleFavoriteUtil } from '../utils/favoriteHelper'
 import { getReviewsCount } from '../services/reviewsService'
 import { useToast } from '../components/Toast'
 import '../styles/layout.css'
@@ -42,17 +43,17 @@ export default function Home() {
   }, [])
 
   useEffect(() => {
-    let cancelado = false
+    let isMounted = true
 
     async function carregarLugares() {
       setLoading(true)
       try {
         const dadosLugares = await getPlaces(filters)
-        if (!cancelado) setPlaces(dadosLugares)
+        if (isMounted) setPlaces(dadosLugares)
       } catch (error) {
         console.error("Erro ao carregar os lugares:", error)
       } finally {
-        if (!cancelado) setLoading(false)
+        if (isMounted) setLoading(false)
       }
     }
 
@@ -61,43 +62,33 @@ export default function Home() {
 
     if (!user) {
       setFavorites([])
-      return () => { cancelado = true }
+      return () => { isMounted = false }
     }
 
-    async function carregarFavoritos() {
+    // carregar favoritos usando helper centralizado
+    ;(async () => {
       try {
-        let ids = getStorageCache('favorites')
-        if (ids === null) {
-          ids = await getFavorites()
-        }
-        if (!cancelado) setFavorites(ids || [])
-      } catch (error) {
-        console.error("Erro ao carregar favoritos:", error)
+        const ids = await carregarFavoritos().catch(() => [])
+        if (isMounted) setFavorites(ids || [])
+      } catch (err) {
+        console.error('Erro ao carregar favoritos:', err)
       }
-    }
-    carregarFavoritos()
+    })()
 
-    return () => { cancelado = true }
+    return () => { isMounted = false }
   }, [filters, user])
 
   async function toggleFavorite(id, isFavorite) {
-    let favs = favorites
-    setFavorites(prev => {
-      const next = prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id]
-      setStorageCache("favorites", next, 30)
-      return next
-    })
     try {
-      await toggleFavoritePlace(id, !isFavorite)
-      showToast(
-        isFavorite ? 'Removido dos favoritos.' : 'Lugar adicionado aos favoritos!',
-        'success'
-      )
+      await toggleFavoriteUtil({
+        id,
+        isFavorite,
+        favoritesList: favorites,
+        setFavoritesState: setFavorites,
+        showToast,
+      })
     } catch (error) {
-      setStorageCache("favorites", favs, 30)
-      setFavorites(favorites)
-      console.log(error)
-      showToast('Não foi possível salvar seu favorito. Tente novamente.', 'error')
+      console.error('Erro ao alternar favorito:', error)
     }
   }
 

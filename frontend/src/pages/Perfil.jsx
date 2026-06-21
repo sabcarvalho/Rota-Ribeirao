@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { logout } from '../services/authService'
 import { getUserReviews } from '../services/reviewsService'
-import { getFavorites, getPlaceById, getStorageCache, toggleFavoritePlace } from '../services/placesService'
+import { getPlaceById } from '../services/placesService'
+import { carregarFavoritos, toggleFavorite } from '../utils/favoriteHelper'
 import { getRecommendations } from '../services/recommendationsService'
 import PlaceCard from '../components/PlaceCard'
 import '../styles/buttons.css'
@@ -42,8 +43,7 @@ export default function Perfil() {
   const navigate = useNavigate()
   const [historico, setHistorico] = useState([])
   const [recomendacoes, setRecomendacoes] = useState([])
-  const [totalFavoritos, setTotalFavoritos] = useState(0)
-  const [favoritosIds, setFavoritosIds] = useState(new Set())
+  const [favoritosIds, setFavoritosIds] = useState([])
 
   const [loading, setLoading] = useState(true)
   const [loadingRecs, setLoadingRecs] = useState(true)
@@ -52,22 +52,19 @@ export default function Perfil() {
 
   useEffect(() => {
     if (!user) return
-    
+
+    let isMounted = true
+
     async function carregarPerfil() {
       setLoading(true)
       try {
         // Avaliações reais feitas pelo usuário
         const reviews = await getUserReviews(user.id).catch(() => [])
 
-        // Favoritos reais (usa o cache se existir)
-        let favs = getStorageCache('favorites')
-        if (favs === null) favs = await getFavorites().catch(() => [])
-        
+        // Favoritos reais (usa helper centralizado)
+        const favs = await carregarFavoritos().catch(() => [])
         const favsArray = Array.isArray(favs) ? favs : []
-        setTotalFavoritos(favsArray.length)
-        
-        // Alimenta o Set com os IDs dos lugares favoritos
-        setFavoritosIds(new Set(favsArray.map(f => f.place_id || f.id)))
+        if (isMounted) setFavoritosIds(favsArray)
 
         // Busca os dados dos lugares avaliados (nome e categoria)
         const idsLugares = [...new Set((reviews || []).map(r => r.id_lugar))]
@@ -110,6 +107,8 @@ export default function Perfil() {
     }
     
     carregarPerfil()
+
+    return () => { isMounted = false }
   }, [user])
 
   if (!user) {
@@ -129,19 +128,12 @@ export default function Perfil() {
 
   async function handleToggleFavorite(placeId, isCurrentlyFav) {
     try {
-      await toggleFavoritePlace(placeId, !isCurrentlyFav)
-      
-      // Atualiza a Fonte Única de Verdade localmente
-      setFavoritosIds(prev => {
-        const novoSet = new Set(prev)
-        if (!isCurrentlyFav) {
-          novoSet.add(placeId)
-          setTotalFavoritos(t => t + 1)
-        } else {
-          novoSet.delete(placeId)
-          setTotalFavoritos(t => t - 1)
-        }
-        return novoSet
+      await toggleFavorite({
+        id: placeId,
+        isFavorite: isCurrentlyFav,
+        favoritesList: favoritosIds,
+        setFavoritesState: setFavoritosIds,
+        showToast: null,
       })
     } catch (error) {
       console.error("Erro ao favoritar:", error)
@@ -204,7 +196,7 @@ export default function Perfil() {
           </div>
           <div className="profile-stat">
             <i className="fa-solid fa-heart"></i>
-            <strong>{totalFavoritos}</strong>
+            <strong>{favoritosIds.length}</strong>
             <span>Favoritos salvos</span>
           </div>
           <div className="profile-stat">
@@ -329,7 +321,7 @@ export default function Perfil() {
                 <PlaceCard
                   key={lugar.id}
                   place={lugar}
-                  isFavorite={favoritosIds.has(lugar.id)}
+                  isFavorite={favoritosIds?.includes(lugar.id)}
                   onToggleFavorite={handleToggleFavorite}
                 />
               ))}
