@@ -3,6 +3,7 @@ import PlaceCard from '../components/PlaceCard'
 import { useAuth } from '../context/AuthContext'
 import FilterBar from '../components/FilterBar'
 import { getPlaces, getFavorites, getStorageCache, setStorageCache, toggleFavoritePlace} from '../services/placesService'
+import { getReviewsCount } from '../services/reviewsService'
 import './Home.css'
 
 export default function Home() {
@@ -13,17 +14,22 @@ export default function Home() {
   const [filters, setFilters] = useState({
     category: '', priceLevel: '', occasion: '', minRating: '',
   })
-  const [stats, setStats] = useState({ restaurantes: 0, bares: 0, eventos: 0, avaliacoes: 0 })
+  const [stats, setStats] = useState({ restaurantes: 0, bares: 0, cafes: 0, eventos: 0, mercados: 0, avaliacoes: 0 })
 
   useEffect(() => {
     async function carregarStats() {
       try {
-        const todos = await getPlaces({})
+        const [todos, totalAvaliacoes] = await Promise.all([
+          getPlaces({}),
+          getReviewsCount(),
+        ])
         setStats({
           restaurantes: todos.filter(p => p.category === 'restaurante').length,
           bares:        todos.filter(p => p.category === 'bar').length,
+          cafes:        todos.filter(p => p.category === 'cafe' || p.category === 'café').length,
           eventos:      todos.filter(p => p.category === 'evento').length,
-          avaliacoes:   todos.reduce((soma, p) => soma + (p.qntdReviews || p.reviews?.length || 0), 0),
+          mercados:     todos.filter(p => p.category === 'mercado').length,
+          avaliacoes:   totalAvaliacoes,
         })
       } catch (error) {
         console.error('Erro ao carregar estatísticas:', error)
@@ -127,9 +133,19 @@ export default function Home() {
               <span>Bares & Pubs</span>
             </div>
             <div className="stat-item">
+              <i className="fa-solid fa-mug-hot"></i>
+              <strong>{stats.cafes}</strong>
+              <span>Cafés</span>
+            </div>
+            <div className="stat-item">
               <i className="fa-solid fa-calendar-days"></i>
               <strong>{stats.eventos}</strong>
               <span>Eventos</span>
+            </div>
+            <div className="stat-item">
+              <i className="fa-solid fa-store"></i>
+              <strong>{stats.mercados}</strong>
+              <span>Mercados</span>
             </div>
             <div className="stat-item">
               <i className="fa-solid fa-star"></i>

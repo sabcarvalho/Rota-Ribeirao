@@ -14,6 +14,37 @@ export async function addReview(id_place, data) {
   return await api.post('reviews', `/places/${id_place}/reviews`, data);
 }
 
+export async function deleteReview(id_review) {
+  try {
+    return await api.delete('reviews', `/reviews/${id_review}`);
+  } catch (error) {
+    if (error.status === 401 || error.detail?.code === "TOKEN_EXPIRED") {
+      try {
+        await refreshToken();
+        return await api.delete('reviews', `/reviews/${id_review}`);
+      } catch (refreshErr) {
+        if (refreshErr instanceof TokenExpiredError) {
+          console.error("Refresh token também expirou. Forçando logout.");
+        }
+        throw refreshErr;
+      }
+    } else {
+      console.error("Erro na requisição: ", error);
+      throw error;
+    }
+  }
+}
+
+export async function getReviewsCount() {
+  try {
+    const data = await api.get('reviews', '/reviews/count');
+    return data?.total || 0;
+  } catch (error) {
+    console.error("Erro ao contar avaliações:", error);
+    return 0;
+  }
+}
+
 export function calculateNewAverageRating(currentRating, totalReviews, newRating) {
   const current = Number(currentRating) || 0;
   const total = Number(totalReviews) || 0;

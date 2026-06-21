@@ -29,7 +29,10 @@ function renderStars(rating) {
 
 function renderPrice(level) {
   return Array.from({ length: 4 }, (_, i) => (
-    <span key={i} style={{ opacity: i < level ? 1 : 0.25 }}>$</span>
+    <span
+      key={i}
+      className={`price-meter__unit${i < level ? '' : ' price-meter__unit--off'}`}
+    >$</span>
   ))
 }
 
@@ -39,10 +42,13 @@ export default function PlaceCard({ place, onToggleFavorite, isFavorite }) {
   return (
     <div className="place-card">
       <Link to={`/place/${place.id}`} className="place-card__image-link">
-        <div
-          className="place-card__image"
-          style={{ backgroundImage: `url(${place.image || `https://picsum.photos/seed/${place.id}/400/250`})` }}
-        >
+        <div className="place-card__image">
+          <img
+            className="place-card__photo"
+            src={place.image || `https://picsum.photos/seed/${place.id}/400/250`}
+            alt={place.name}
+            loading="lazy"
+          />
           <span className={`badge ${CATEGORY_BADGE[place.category] || 'badge--orange'}`}>
             <i className={`fa-solid ${CATEGORY_ICON[place.category] || 'fa-location-dot'}`}></i>
             {' '}{place.category}
@@ -80,8 +86,14 @@ export default function PlaceCard({ place, onToggleFavorite, isFavorite }) {
         )}
 
         <div className="place-card__meta">
-          <span className="stars">{renderStars(place.rating)}</span>
-          <span className="place-card__rating-num">{place.rating?.toFixed(1)}</span>
+          {place.qntdReviews || place.rating ? (
+            <>
+              <span className="stars">{renderStars(place.rating)}</span>
+              <span className="place-card__rating-num">{place.rating?.toFixed(1)}</span>
+            </>
+          ) : (
+            <span className="place-card__no-reviews">Ainda não possui avaliações</span>
+          )}
           <span className="place-card__price">{renderPrice(place.priceLevel)}</span>
         </div>
       </div>

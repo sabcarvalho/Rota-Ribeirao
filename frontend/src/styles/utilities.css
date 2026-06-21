@@ -1,0 +1,71 @@
+/* ============================================================
+   utilities.css — Classes utilitárias reutilizáveis
+   Helpers de acessibilidade, estados vazios, carregamento e
+   o medidor de preço ($$$) compartilhado entre cartões.
+   ============================================================ */
+
+/* Acessível a leitores de tela, invisível visualmente */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Estado vazio (sem resultados, sem favoritos, etc.) */
+.empty-state {
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--gray);
+}
+
+.empty-state i {
+  font-size: 3rem;
+  margin-bottom: 16px;
+  display: block;
+  color: var(--light-gray);
+}
+
+.empty-state p {
+  font-size: 1.1rem;
+  margin-bottom: 20px;
+}
+
+/* Container que centraliza um spinner de carregamento */
+.loading-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spinner-lg {
+  font-size: 2rem;
+  color: var(--primary);
+}
+
+/* Tela/área de carregamento (ex.: verificação de permissões) */
+.loading-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 70px);
+  padding: 90px 20px 60px;
+  color: var(--gray);
+  font-size: 1.05rem;
+  font-weight: 500;
+}
+
+/* Medidor de preço: $ ativos vs. esmaecidos (1-4)
+   Compartilhado por PlaceCard e PlaceDetail. */
+.price-meter__unit {
+  opacity: 1;
+}
+
+.price-meter__unit--off {
+  opacity: 0.3;
+}

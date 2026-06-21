@@ -28,6 +28,13 @@
   color: var(--primary);
 }
 
+.navbar-logo-link {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  color: inherit;
+}
+
 .nav-menu {
   display: flex;
   align-items: center;

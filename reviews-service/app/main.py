@@ -120,6 +120,12 @@ def get_place_reviews(id_place: int, session: Session = Depends(get_session)):
         .all()
     return [_serialize_review(review) for review in reviews]
 
+@app.get("/reviews/count")
+def count_reviews(session: Session = Depends(get_session)):
+    """Retorna o total de avaliações existentes no sistema (fonte da verdade)."""
+    total = session.query(Review).count()
+    return {"total": total}
+
 @app.get("/reviews/user/{id_usuario}", response_model=list[ReviewResponseSchema])
 def get_user_reviews(id_usuario: int, session: Session = Depends(get_session)):
     reviews = session.query(Review)\
@@ -127,6 +133,47 @@ def get_user_reviews(id_usuario: int, session: Session = Depends(get_session)):
         .order_by(Review.data_criacao.desc())\
         .all()
     return [_serialize_review(review) for review in reviews]
+
+@app.delete("/reviews/{id_review}")
+def delete_review(
+    id_review: int,
+    session: Session = Depends(get_session),
+    usuario_payload: dict = Depends(verificar_token)
+):
+    """
+    Exclui uma avaliação. Permitido apenas para o ADMINISTRADOR (qualquer avaliação)
+    ou para o AUTOR da própria avaliação. Recalcula a nota média do lugar.
+    """
+    id_usuario = int(usuario_payload.get("sub"))
+    is_admin = str(usuario_payload.get("isAdmin")) == "True"
+
+    review = session.query(Review).filter(Review.id == id_review).first()
+    if not review:
+        raise HTTPException(status_code=404, detail="Avaliação não encontrada.")
+
+    # Autorização: admin OU dono da avaliação
+    if not is_admin and review.id_usuario != id_usuario:
+        raise HTTPException(status_code=403, detail="Você não tem permissão para excluir esta avaliação.")
+
+    id_lugar = review.id_lugar
+    session.delete(review)
+    session.commit()
+
+    # Recalcula nota média e contagem do lugar com base nas avaliações restantes
+    restantes = session.query(Review).filter(Review.id_lugar == id_lugar).all()
+    qntd = len(restantes)
+    media = round(sum(r.nota for r in restantes) / qntd, 1) if qntd > 0 else 0.0
+
+    try:
+        requests.put(
+            f"{PLACES_SERVICE_URL}/internal/places/{id_lugar}/rating",
+            json={"nota": media, "qntd_reviews": qntd}
+        )
+    except requests.exceptions.RequestException:
+        # A avaliação já foi removida; a nota será reconciliada em uma próxima operação.
+        pass
+
+    return {"detail": "Avaliação removida com sucesso."}
 
 @app.delete("/internal/reviews/place/{id_place}")
 def delete_place_reviews_internal(id_place: int, session: Session = Depends(get_session)):

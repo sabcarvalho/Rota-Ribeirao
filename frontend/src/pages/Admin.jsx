@@ -505,7 +505,6 @@ crawlerMsg
             </table>
           </div>
         </div>
-
       </div>
     </div>
   )
