@@ -57,7 +57,7 @@ async def get_recommendations(id_usuario: int, request: Request, limit: int = 10
     # Levantar o histórico do usuário (Favoritos e Avaliações)
     async with httpx.AsyncClient() as client:
         res_favs, res_reviews = await asyncio.gather(
-            client.get(f"{ADMIN_SERVICE_URL}/places/favorites", headers=headers_internos),
+            client.get(f"{ADMIN_SERVICE_URL}/favorites", headers=headers_internos),
             client.get(f"{REVIEWS_SERVICE_URL}/reviews/user/{id_usuario}", headers=headers_internos),
             return_exceptions=True
         )
