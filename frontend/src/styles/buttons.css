@@ -4,7 +4,10 @@
    ============================================================ */
 
 .btn {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
   padding: 10px 24px;
   border-radius: 6px;
   font-size: 0.95rem;
@@ -68,8 +71,9 @@
   transform: translateY(-1px);
 }
 
-/* Modificador de tamanho compacto */
+/* Modificador de tamanho compacto (ações densas, ex.: tabelas do admin) */
 .btn--sm {
+  min-height: 0;
   padding: 6px 12px;
   font-size: 0.82rem;
 }

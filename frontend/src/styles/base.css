@@ -54,3 +54,14 @@ img {
   max-width: 100%;
   display: block;
 }
+
+/* Acessibilidade — contorno de foco visível apenas na navegação por teclado.
+   :focus-visible não dispara em cliques de mouse, evitando contornos indesejados. */
+*:focus {
+  outline: none;
+}
+
+*:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}

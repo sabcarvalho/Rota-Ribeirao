@@ -40,6 +40,7 @@ export default function Perfil() {
   const [totalFavoritos, setTotalFavoritos] = useState(0)
   const [loading, setLoading] = useState(true)
   const [aberto, setAberto] = useState(null)
+  const [verPrivacidade, setVerPrivacidade] = useState(false)
 
   useEffect(() => {
     if (!user) return
@@ -220,6 +221,23 @@ export default function Perfil() {
                 Nosso sistema vai analisar suas avaliações e favoritos para sugerir
                 os lugares perfeitos para o seu perfil.
               </p>
+              <button
+                className="recommendations-more"
+                onClick={() => setVerPrivacidade(v => !v)}
+                aria-expanded={verPrivacidade}
+              >
+                <i className="fa-solid fa-shield-halved"></i>
+                Saiba mais sobre privacidade
+                <i className={`fa-solid fa-chevron-${verPrivacidade ? 'up' : 'down'}`}></i>
+              </button>
+              {verPrivacidade && (
+                <p className="recommendations-privacy">
+                  Suas recomendações são geradas <strong>somente</strong> a partir da sua
+                  atividade nesta conta (lugares que você avaliou e favoritou). Esses dados
+                  não são compartilhados com terceiros e servem apenas para personalizar
+                  as sugestões para você.
+                </p>
+              )}
             </div>
           </div>
 

@@ -92,7 +92,6 @@
   background: var(--white);
   color: var(--dark);
   cursor: pointer;
-  outline: none;
   transition: var(--transition);
 }
 

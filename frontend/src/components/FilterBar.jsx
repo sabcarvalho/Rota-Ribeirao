@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import './FilterBar.css'
 
 const CATEGORIES = [
@@ -26,19 +27,61 @@ const OCCASIONS = [
 ]
 
 export default function FilterBar({ filters, onFilter }) {
+  // Campo de nome com debounce: só dispara a busca após o usuário parar de digitar
+  const [nameInput, setNameInput] = useState(filters.name || '')
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (nameInput !== (filters.name || '')) {
+        onFilter({ ...filters, name: nameInput })
+      }
+    }, 400)
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nameInput])
+
+  // Mantém o input sincronizado quando os filtros são limpos por fora
+  useEffect(() => {
+    setNameInput(filters.name || '')
+  }, [filters.name])
+
   function handleChange(key, value) {
     onFilter({ ...filters, [key]: value })
   }
 
   function clearFilters() {
-    onFilter({ category: '', priceLevel: '', occasion: '', minRating: '' })
+    setNameInput('')
+    onFilter({ name: '', category: '', priceLevel: '', occasion: '', minRating: '' })
   }
 
   const hasActiveFilter =
-    filters.category || filters.priceLevel || filters.occasion || filters.minRating
+    filters.name || filters.category || filters.priceLevel || filters.occasion || filters.minRating
 
   return (
     <div className="filter-bar">
+      <div className="filter-bar__search">
+        <label htmlFor="filtro-nome" className="sr-only">Buscar lugar por nome</label>
+        <i className="fa-solid fa-magnifying-glass filter-search__icon"></i>
+        <input
+          id="filtro-nome"
+          type="text"
+          className="filter-search__input"
+          placeholder="Buscar lugar pelo nome..."
+          value={nameInput}
+          onChange={e => setNameInput(e.target.value)}
+        />
+        {nameInput && (
+          <button
+            type="button"
+            className="filter-search__clear"
+            onClick={() => setNameInput('')}
+            aria-label="Limpar busca"
+          >
+            <i className="fa-solid fa-xmark"></i>
+          </button>
+        )}
+      </div>
+
       <div className="filter-bar__categories">
         {CATEGORIES.map(cat => (
           <button
