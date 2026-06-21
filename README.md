@@ -29,7 +29,7 @@ O projeto segue uma arquitetura **Multitier** e **Microservices**, garantindo o 
 - **Frontend:** TypeScript + React + Vite.
 - **Containerização:** Docker & Docker Compose.
 - **Hospedagem & Nuvem:** Render
-- **Comunicação:** REST API (HTTP) e WebSockets.
+- **Comunicação:** REST API (HTTP).
 
 ---
 
