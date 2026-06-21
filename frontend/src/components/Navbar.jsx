@@ -36,9 +36,14 @@ export default function Navbar() {
         <h1 className='navbar-logo'>Rota Ribeir&#227;o</h1>
       </Link>
 
-      <div className='menu-icon' onClick={() => setOpen(o => !o)}>
+      <button
+        className='menu-icon'
+        onClick={() => setOpen(o => !o)}
+        aria-label={open ? 'Fechar menu' : 'Abrir menu'}
+        aria-expanded={open}
+      >
         <i className={open ? 'fa-solid fa-xmark' : 'fa-solid fa-bars'}></i>
-      </div>
+      </button>
 
       <ul className={open ? 'nav-menu active' : 'nav-menu'}>
         {navItems.map((item) => (

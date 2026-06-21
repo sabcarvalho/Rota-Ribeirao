@@ -256,7 +256,7 @@ crawlerMsg
             </button>
             <div className="admin-crawler-divider"></div>
             <button className="btn btn--purple" onClick={handleRunCrawlerEvents} disabled={isCrawlerRunning}>
-              <i className="fa-solid fa-calendar-star"></i> Buscar Eventos (Ticketmaster/Ingresse)
+              <i className="fa-solid fa-ticket"></i> Buscar Eventos (Ticketmaster/Ingresse)
             </button>
             <button className="btn btn--secondary" onClick={fetchPlaces} title="Atualizar a lista de locais abaixo">
                <i className="fa-solid fa-rotate"></i> Refresh

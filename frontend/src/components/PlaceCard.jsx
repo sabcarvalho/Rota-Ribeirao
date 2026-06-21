@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useToast } from './Toast'
 import './PlaceCard.css'
 
 const CATEGORY_BADGE = {
@@ -38,6 +39,7 @@ function renderPrice(level) {
 
 export default function PlaceCard({ place, onToggleFavorite, isFavorite }) {
   const { user } = useAuth()
+  const { showToast } = useToast()
 
   return (
     <div className="place-card">
@@ -61,13 +63,23 @@ export default function PlaceCard({ place, onToggleFavorite, isFavorite }) {
           <Link to={`/place/${place.id}`}>
             <h3 className="place-card__name">{place.name}</h3>
           </Link>
-          {user && (
+          {user ? (
             <button
               className={`place-card__fav${isFavorite ? ' active' : ''}`}
               onClick={() => onToggleFavorite?.(place.id, isFavorite)}
               aria-label="Favoritar"
             >
               <i className={`fa-${isFavorite ? 'solid' : 'regular'} fa-heart`}></i>
+            </button>
+          ) : (
+            <button
+              className="place-card__fav place-card__fav--locked"
+              onClick={() => showToast('Faça login para salvar seus favoritos.', 'info')}
+              aria-label="Faça login para favoritar"
+              title="Faça login para favoritar"
+            >
+              <i className="fa-regular fa-heart"></i>
+              <i className="fa-solid fa-lock place-card__fav-lock"></i>
             </button>
           )}
         </div>

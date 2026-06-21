@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { getPlaceById, toggleFavoritePlace, getFavorites, getStorageCache,setStorageCache } from '../services/placesService'
 import { getPlaceReviews, addReview, deleteReview, calculateNewAverageRating } from '../services/reviewsService'
 import { useAuth } from '../context/AuthContext'
+import { useToast } from '../components/Toast'
 import './PlaceDetail.css'
 
 function renderStars(rating, className = '') {
@@ -18,6 +19,7 @@ export default function PlaceDetail() {
   const { id }                  = useParams()
   const navigate                = useNavigate()
   const { user }                = useAuth()
+  const { showToast }           = useToast()
   const [place, setPlace]       = useState(null)
   const [loading, setLoading]   = useState(true)
   const [loadingReviews, setLoadingReviews] = useState(true)
@@ -82,16 +84,18 @@ export default function PlaceDetail() {
       const next = isFav ? favs.filter(f => f !== place.id) : [...favs, place.id]
       setStorageCache("favorites", next, 30)
       setIsFav(!isFav)
-      
+
       await toggleFavoritePlace(place.id, !isFav)
       setStorageCache('favorites', next, 30)
-      
+      showToast(
+        isFav ? 'Removido dos favoritos.' : 'Lugar adicionado aos favoritos!',
+        'success'
+      )
     } catch (error) {
       console.log(error)
       setIsFav(estadoAnterior)
       setStorageCache("favorites", favs, 30)
-      alert("Não foi possível salvar seu favorito. Tente novamente.")
-      
+      showToast('Não foi possível salvar seu favorito. Tente novamente.', 'error')
     }
   }
 
@@ -188,13 +192,21 @@ export default function PlaceDetail() {
                   >$</span>
                 ))}
               </span>
-              {user && (
+              {user ? (
                 <button
                   className={`detail-fav-btn${isFav ? ' active' : ''}`}
                   onClick={toggleFavorite}
                 >
                   <i className={`fa-${isFav ? 'solid' : 'regular'} fa-heart`}></i>
                   {isFav ? 'Salvo' : 'Favoritar'}
+                </button>
+              ) : (
+                <button
+                  className="detail-fav-btn"
+                  onClick={() => showToast('Faça login para salvar seus favoritos.', 'info')}
+                  title="Faça login para favoritar"
+                >
+                  <i className="fa-solid fa-lock"></i> Favoritar
                 </button>
               )}
             </div>

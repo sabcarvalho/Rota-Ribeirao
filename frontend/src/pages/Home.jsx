@@ -4,15 +4,17 @@ import { useAuth } from '../context/AuthContext'
 import FilterBar from '../components/FilterBar'
 import { getPlaces, getFavorites, getStorageCache, setStorageCache, toggleFavoritePlace} from '../services/placesService'
 import { getReviewsCount } from '../services/reviewsService'
+import { useToast } from '../components/Toast'
 import './Home.css'
 
 export default function Home() {
   const {user} = useAuth()
+  const { showToast } = useToast()
   const [places, setPlaces]         = useState([])
   const [loading, setLoading]       = useState(true)
   const [favorites, setFavorites]   = useState([])
   const [filters, setFilters] = useState({
-    category: '', priceLevel: '', occasion: '', minRating: '',
+    name: '', category: '', priceLevel: '', occasion: '', minRating: '',
   })
   const [stats, setStats] = useState({ restaurantes: 0, bares: 0, cafes: 0, eventos: 0, mercados: 0, avaliacoes: 0 })
 
@@ -85,13 +87,16 @@ export default function Home() {
       return next
     })
     try {
-      const response = await toggleFavoritePlace(id, !isFavorite)
-      
+      await toggleFavoritePlace(id, !isFavorite)
+      showToast(
+        isFavorite ? 'Removido dos favoritos.' : 'Lugar adicionado aos favoritos!',
+        'success'
+      )
     } catch (error) {
       setStorageCache("favorites", favs, 30)
       setFavorites(favorites)
       console.log(error)
-      alert("Não foi possível salvar seu favorito. Tente novamente.")
+      showToast('Não foi possível salvar seu favorito. Tente novamente.', 'error')
     }
   }
 
@@ -176,7 +181,7 @@ export default function Home() {
               <p>Nenhum lugar encontrado com esses filtros.</p>
               <button
                 className="btn btn--primary"
-                onClick={() => setFilters({ category: '', priceLevel: '', occasion: '', minRating: '' })}
+                onClick={() => setFilters({ name: '', category: '', priceLevel: '', occasion: '', minRating: '' })}
               >
                 Limpar filtros
               </button>

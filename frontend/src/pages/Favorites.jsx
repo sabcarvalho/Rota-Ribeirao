@@ -70,7 +70,6 @@ export default function Favorites() {
       <div className="page-wrapper favorites-page">
         <div className="container">
           <div className="empty-state">
-            <i className="fa-solid fa-lock"></i>
             <p>Faça login para ter favoritos.</p>
             <Link to="/login" className="btn btn--primary">
               <i className="fa-solid fa-right-to-bracket"></i> Entrar
@@ -97,7 +96,6 @@ export default function Favorites() {
 
         {favoritePlaces.length === 0 ? (
           <div className="empty-state">
-            <i className="fa-regular fa-heart"></i>
             <p>Explore lugares e clique no coração para salvar aqui.</p>
             <Link to="/" className="btn btn--primary">
               <i className="fa-solid fa-compass"></i> Explorar lugares
