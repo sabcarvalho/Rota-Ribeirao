@@ -5,6 +5,7 @@ import FilterBar from '../components/FilterBar'
 import { getPlaces, getFavorites, getStorageCache, setStorageCache, toggleFavoritePlace} from '../services/placesService'
 import { getReviewsCount } from '../services/reviewsService'
 import { useToast } from '../components/Toast'
+import '../styles/layout.css'
 import './Home.css'
 
 export default function Home() {

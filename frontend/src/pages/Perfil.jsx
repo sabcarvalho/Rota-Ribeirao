@@ -3,7 +3,11 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { logout } from '../services/authService'
 import { getUserReviews } from '../services/reviewsService'
-import { getFavorites, getPlaceById, getStorageCache } from '../services/placesService'
+import { getFavorites, getPlaceById, getStorageCache, toggleFavoritePlace } from '../services/placesService'
+import { getRecommendations } from '../services/recommendationsService'
+import PlaceCard from '../components/PlaceCard'
+import '../styles/buttons.css'
+import '../styles/layout.css'
 import './Perfil.css'
 
 const BADGE_COLOR = {
@@ -37,13 +41,18 @@ export default function Perfil() {
   const { user, setUser } = useAuth()
   const navigate = useNavigate()
   const [historico, setHistorico] = useState([])
+  const [recomendacoes, setRecomendacoes] = useState([])
   const [totalFavoritos, setTotalFavoritos] = useState(0)
+  const [favoritosIds, setFavoritosIds] = useState(new Set())
+
   const [loading, setLoading] = useState(true)
+  const [loadingRecs, setLoadingRecs] = useState(true)
   const [aberto, setAberto] = useState(null)
   const [verPrivacidade, setVerPrivacidade] = useState(false)
 
   useEffect(() => {
     if (!user) return
+    
     async function carregarPerfil() {
       setLoading(true)
       try {
@@ -53,7 +62,12 @@ export default function Perfil() {
         // Favoritos reais (usa o cache se existir)
         let favs = getStorageCache('favorites')
         if (favs === null) favs = await getFavorites().catch(() => [])
-        setTotalFavoritos(Array.isArray(favs) ? favs.length : 0)
+        
+        const favsArray = Array.isArray(favs) ? favs : []
+        setTotalFavoritos(favsArray.length)
+        
+        // Alimenta o Set com os IDs dos lugares favoritos
+        setFavoritosIds(new Set(favsArray.map(f => f.place_id || f.id)))
 
         // Busca os dados dos lugares avaliados (nome e categoria)
         const idsLugares = [...new Set((reviews || []).map(r => r.id_lugar))]
@@ -82,7 +96,19 @@ export default function Perfil() {
       } finally {
         setLoading(false)
       }
+
+      // Carrega recomendações independentemente de possíveis falhas no histórico
+      setLoadingRecs(true)
+      try {
+        const recs = await getRecommendations(user.id).catch(() => [])
+        setRecomendacoes(Array.isArray(recs) ? recs : [])
+      } catch (error) {
+        console.error('Erro ao carregar recomendações:', error)
+      } finally {
+        setLoadingRecs(false)
+      }
     }
+    
     carregarPerfil()
   }, [user])
 
@@ -101,6 +127,41 @@ export default function Perfil() {
     setAberto(prev => (prev === id ? null : id))
   }
 
+  async function handleToggleFavorite(placeId, isCurrentlyFav) {
+    try {
+      await toggleFavoritePlace(placeId, !isCurrentlyFav)
+      
+      // Atualiza a Fonte Única de Verdade localmente
+      setFavoritosIds(prev => {
+        const novoSet = new Set(prev)
+        if (!isCurrentlyFav) {
+          novoSet.add(placeId)
+          setTotalFavoritos(t => t + 1)
+        } else {
+          novoSet.delete(placeId)
+          setTotalFavoritos(t => t - 1)
+        }
+        return novoSet
+      })
+    } catch (error) {
+      console.error("Erro ao favoritar:", error)
+    }
+  }
+
+  async function recarregarRecomendacoes() {
+    setLoadingRecs(true)
+    // Destrói o cache local para forçar o serviço a ir na rede
+    localStorage.removeItem(`recommendations_${user.id}`)
+    try {
+      const recs = await getRecommendations(user.id).catch(() => [])
+      setRecomendacoes(Array.isArray(recs) ? recs : [])
+    } catch (error) {
+      console.error('Erro ao recarregar recomendações:', error)
+    } finally {
+      setLoadingRecs(false)
+    }
+  }
+
   const initials = user.name
     ? user.name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()
     : '?'
@@ -111,6 +172,7 @@ export default function Perfil() {
     ? (historico.reduce((s, i) => s + (i.rating || 0), 0) / totalAvaliacoes).toFixed(1)
     : '—'
   const categorias = [...new Set(historico.map(i => i.category).filter(Boolean))]
+
 
   return (
     <div className="page-wrapper profile-page">
@@ -216,9 +278,9 @@ export default function Perfil() {
           <div className="recommendations-banner">
             <i className="fa-solid fa-wand-magic-sparkles"></i>
             <div className="recommendations-banner__text">
-              <strong>Recomendações personalizadas chegando em breve</strong>
+              <strong>Suas recomendações personalizadas</strong>
               <p>
-                Nosso sistema vai analisar suas avaliações e favoritos para sugerir
+                Analisamos suas avaliações e favoritos para sugerir
                 os lugares perfeitos para o seu perfil.
               </p>
               <button
@@ -241,22 +303,38 @@ export default function Perfil() {
             </div>
           </div>
 
-          <div className="recommendations-grid">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="recommendation-card">
-                <div className="recommendation-card__img">
-                  <i className="fa-solid fa-location-dot"></i>
-                </div>
-                <div className="recommendation-card__body">
-                  <span className="recommendation-card__line recommendation-card__line--lg"></span>
-                  <span className="recommendation-card__line"></span>
-                  <span className="recommendation-card__badge">
-                    <i className="fa-solid fa-clock"></i> Em breve
-                  </span>
-                </div>
-              </div>
-            ))}
+          <div className="recommendations-actions">
+            <button
+              className="btn btn--dark"
+              onClick={recarregarRecomendacoes}
+              disabled={loadingRecs}
+            >
+              Recarregar recomendações
+            </button>
           </div>
+
+          
+
+          {loadingRecs ? (
+            <p className="profile-loading">
+              <i className="fa-solid fa-spinner fa-spin"></i> Carregando recomendações...
+            </p>
+          ) : recomendacoes.length === 0 ? (
+            <div className="profile-history">
+              <div className="history-empty">Nenhuma recomendação disponível no momento. Avalie e favorite mais lugares!</div>
+            </div>
+          ) : (
+            <div className="places-grid">
+              {recomendacoes.map(lugar => (
+                <PlaceCard
+                  key={lugar.id}
+                  place={lugar}
+                  isFavorite={favoritosIds.has(lugar.id)}
+                  onToggleFavorite={handleToggleFavorite}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
       </div>

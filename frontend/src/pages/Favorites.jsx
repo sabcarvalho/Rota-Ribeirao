@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import PlaceCard from '../components/PlaceCard'
 import { getPlaceById, toggleFavoritePlace, getFavorites, getStorageCache,setStorageCache} from '../services/placesService'
+import '../styles/layout.css'
 import './Favorites.css'
 
 export default function Favorites() {
@@ -102,7 +103,7 @@ export default function Favorites() {
             </Link>
           </div>
         ) : (
-          <div className="favorites-grid">
+          <div className="places-grid">
             {favoritePlaces.map(place => (
               <PlaceCard
                 key={place.id}

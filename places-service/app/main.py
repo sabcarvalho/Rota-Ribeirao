@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException, Query, Request, status
-from app.schemas import CriacaoLugarSchema, LugarResponseSchema, UpdateRatingSchema, AtualizacaoLugarSchema
+from app.schemas import CriacaoLugarSchema, LugarResponseSchema, UpdateRatingSchema, AtualizacaoLugarSchema, IdsListSchema, CategoriaResponseSchema
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session, joinedload, selectinload
@@ -303,3 +303,50 @@ def update_place_rating(id_place: int, rating_data: UpdateRatingSchema, session:
     lugar.qntd_reviews = rating_data.qntd_reviews
     session.commit()
     return {"detail": "Nota e quantidade de reviews atualizadas com sucesso"}
+
+
+# Endpoints para recomendações
+@app.post("/places/extract_categories", response_model=list[CategoriaResponseSchema])
+def extract_categories(payload: IdsListSchema, session: Session = Depends(get_session)):
+    """
+    Endpoint DTO para o Serviço de Recomendações extrair categorias em lote.
+    Contorna o limite de tamanho da URL recebendo os dados via POST.
+    """
+    if not payload.ids:
+        return []
+        
+    lugar_poly = with_polymorphic(Lugar, [Evento])
+    filtro_ativo = and_(lugar_poly.status == "ativo")
+        
+    lugares = session.query(lugar_poly.id, lugar_poly.categoria)\
+                     .filter(lugar_poly.id.in_(payload.ids), filtro_ativo)\
+                     .all()
+                     
+    return [{"id": l.id, "category": l.categoria} for l in lugares]
+
+@app.get("/places/top_rated", response_model=list[LugarResponseSchema])
+def get_top_rated_places(
+    limit: int = 10,
+    category: str | None = None,
+    session: Session = Depends(get_session)
+):
+    """
+    Retorna os locais ativos ordenados pelas maiores notas, limitados a X resultados.
+    """
+    lugar_poly = with_polymorphic(Lugar, [Evento])
+    filtro_ativo = and_(lugar_poly.status == "ativo")
+    
+    query = session.query(lugar_poly).filter(filtro_ativo)
+    
+    now = datetime.now()
+    query = query.filter(
+        or_(
+            func.lower(lugar_poly.tipo) == 'fixo', 
+            Evento.data_fim >= now
+        )
+    )
+
+    if category:
+        query = query.filter(func.lower(lugar_poly.categoria) == category.lower())
+        
+    return query.order_by(lugar_poly.nota.desc()).limit(limit).all()

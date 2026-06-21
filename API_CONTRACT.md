@@ -149,6 +149,45 @@ Deleta todos os favoritos vinculados ao id do local passado. Apenas realizada po
 
 ---
 
+## Recomendações
+
+### GET `/recommendations/user/:id_usuario`
+Retorna recomendações personalizadas de lugares para o usuário logado.
+
+**Autenticação:** Requer token de usuário logado (Bearer Token).
+
+**Query params:**
+| Param | Tipo | Exemplo | Descrição |
+|---|---|---|---|
+| `limit` | number | `10` | Número máximo de recomendações retornadas (padrão 10) |
+
+**Response 200:**
+```json
+[
+  {
+    "id": 1,
+    "name": "Restaurante Sinhá Moça",
+    "street": "Av. Costábile Romano",
+    "number": "2201",
+    "district": "Ribeirânia",
+    "cep": "14025-020",
+    "category": "restaurante",
+    "occasion": "encontro,comemoracao",
+    "priceLevel": 3,
+    "rating": 4.7,
+    "qntd_reviews": 12,
+    "description": "Tradicional restaurante de culinária...",
+    "type": "fixo",
+    "image": "https://url.com/foto.jpg",
+    "event": null,
+    "active": true,
+    "status": "ativo"
+  }
+]
+```
+
+---
+
 ## Lugares (Público)
 
 ### GET `/places`
@@ -407,6 +446,69 @@ Atualiza a nota e a quantidade de reviews de um lugar. **Chamado apenas pelo ser
 
 ---
 
+### GET `/places/top_rated`
+Retorna os lugares ativos ordenados pelas maiores notas.
+
+**Autenticação:** Não requer.
+
+**Query params:**
+| Param | Tipo | Exemplo | Descrição |
+|---|---|---|---|
+| `limit` | number | `10` | Número máximo de lugares retornados |
+| `category` | string | `bar` | Filtra por categoria exata |
+
+**Response 200:**
+```json
+[
+  {
+    "id": 1,
+    "name": "Restaurante Sinhá Moça",
+    "street": "Av. Costábile Romano",
+    "number": "2201",
+    "district": "Ribeirânia",
+    "cep": "14025-020",
+    "category": "restaurante",
+    "occasion": "encontro,comemoracao",
+    "priceLevel": 3,
+    "rating": 4.7,
+    "qntd_reviews": 12,
+    "description": "Tradicional restaurante de culinária...",
+    "type": "fixo",
+    "image": "https://url.com/foto.jpg",
+    "event": null,
+    "active": true,
+    "status": "ativo"
+  }
+]
+```
+
+---
+
+### POST `/places/extract_categories`
+Rota de **Uso Interno (DTO)** usada para extrair categorias de lugares pelo conjunto de IDs.
+
+**Autenticação:** Não requer.
+
+**Request body:**
+```json
+{
+  "ids": [1, 2, 3]
+}
+```
+
+**Response 200:**
+```json
+[
+  {
+    "id": 1,
+    "category": "bar"
+  }
+]
+```
+
+---
+
+
 ## Avaliações
 
 ### POST `/places/:id/reviews`
@@ -485,6 +587,9 @@ O frontend entra no room ao abrir a página de detalhe de um lugar.
 | POST | `/auth/register` | Não | Cadastro |
 | GET | `/places` | Não | Lista lugares (com filtros) |
 | GET | `/places/:id` | Não | Detalhe de um lugar |
+| GET | `/places/top_rated` | Não | Top lugares por nota |
+| POST | `/places/extract_categories` | Não / Uso Interno | Extrai categorias por IDs |
+| GET | `/recommendations/user/:id_usuario` | Usuário logado | Recomendações personalizadas |
 | POST | `/places` | Admin | Criar lugar |
 | DELETE | `/places/:id` | Admin | Remover lugar |
 | POST | `/places/:id/reviews` | Usuário logado | Adicionar avaliação |

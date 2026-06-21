@@ -69,3 +69,11 @@ class LugarResponseSchema(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class IdsListSchema(BaseModel):
+    ids: list[int]
+
+class CategoriaResponseSchema(BaseModel):
+    id: int
+    category: str

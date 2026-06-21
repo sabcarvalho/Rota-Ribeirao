@@ -292,3 +292,5 @@ export async function updateStatusPlace(id, newStatus) {
   else
     return await api.post('places', `/places/${id}/deactivate`, {})
 }
+
+export { mapPlaceToFrontend }
