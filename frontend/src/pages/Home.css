@@ -4,7 +4,7 @@
   min-height: 600px;
   background:
     linear-gradient(135deg, rgba(26,26,46,0.85) 0%, rgba(22,33,62,0.75) 100%),
-    url('/hero-bg.png') center/cover no-repeat;
+    url('https://i.pinimg.com/736x/08/f2/fe/08f2fe4ba4955a50f109dc16f106fec2.jpg') center/cover no-repeat;
   display: flex;
   align-items: center;
   justify-content: center;

@@ -81,11 +81,7 @@ export default function Login() {
           <Link to="/register">Cadastre-se gratuitamente</Link>
         </p>
 
-        <div className="auth-hint">
-          <small>
-            <strong>Teste:</strong> admin@rota.com / 123456
-          </small>
-        </div>
+        
       </div>
     </div>
   )
