@@ -3,7 +3,7 @@ import { refreshToken } from './authService';
 import { TokenExpiredError } from './errors_classes';
 
 export async function getPlaceReviews(id_place) {
-    return await api.get('reviews', `/places/${id_place}/reviews`);
+  return await api.get('reviews', `/places/${id_place}/reviews`);
 }
 
 export async function getUserReviews(id_usuario) {
@@ -15,24 +15,7 @@ export async function addReview(id_place, data) {
 }
 
 export async function deleteReview(id_review) {
-  try {
-    return await api.delete('reviews', `/reviews/${id_review}`);
-  } catch (error) {
-    if (error.status === 401 || error.detail?.code === "TOKEN_EXPIRED") {
-      try {
-        await refreshToken();
-        return await api.delete('reviews', `/reviews/${id_review}`);
-      } catch (refreshErr) {
-        if (refreshErr instanceof TokenExpiredError) {
-          console.error("Refresh token também expirou. Forçando logout.");
-        }
-        throw refreshErr;
-      }
-    } else {
-      console.error("Erro na requisição: ", error);
-      throw error;
-    }
-  }
+  return await api.delete('reviews', `/reviews/${id_review}`);
 }
 
 export async function getReviewsCount() {

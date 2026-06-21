@@ -1,4 +1,3 @@
-// api.js
 import { TokenExpiredError, UnauthorizedError } from './errors_classes'
 
 const SERVICES = {
@@ -16,31 +15,30 @@ async function request(service, path, options = {}) {
   }
 
   const token = localStorage.getItem('token')
-  const cleanPath = path.startsWith('/') ? path : `/${path}`
+  const cleanPath = path.startsWith('/') ? path : `/${path}` //evitando duplicacao de barras
 
   try {
     const res = await fetch(`${baseUrl}${cleanPath}`, {
       headers: {
         'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}), //enviando token do usuario logado nas requisicoes
         ...options.headers,
       },
       ...options,
     })
 
     if (!res.ok) {
-      const errorBody = await res.json().catch(() => ({ detail: 'Erro na requisição' }))
+      const errorBody = await res.json().catch(() => ({ detail: 'Erro na requisição' })) //se nao for um json valido
       let error
-
-      // Mapeamento centralizado de erros
+      //mapeando os possiveis erros
       if (res.status === 401) {
-        if (errorBody.detail?.code === "TOKEN_EXPIRED") {
+        if (errorBody.detail?.code === "TOKEN_EXPIRED") { //token envidado expirado
           error = new TokenExpiredError(errorBody.detail.message || "Token expirado.")
         } else {
           error = new UnauthorizedError(errorBody.detail || "Acesso não autorizado.")
         }
       } else {
-        error = new Error(errorBody.detail || 'Erro na requisição')
+        error = new Error(errorBody.detail || 'Erro na requisição') 
       }
       
       error.status = res.status
@@ -50,17 +48,18 @@ async function request(service, path, options = {}) {
     }
 
     if (res.status === 204) return null
+    
     return res.json()
 
   } catch (error) {
-    /// Intercepta erros de autenticação e tenta reprocessar caso não seja um reenvio (_isRetry)
+    //intercepta erros de autenticacao e tenta reprocessar caso não seja um reenvio
     if ((error instanceof TokenExpiredError) && !options._isRetry) {
       try {
-        //O import dinâmico resolve a dependência circular com o authService
+        //import dinamico para nao ter dependencia circular com o authService
         const { refreshToken } = await import('./authService')
         await refreshToken()
 
-        //Dispara novamente a mesma requisição original, marcando-a como _isRetry
+        //dispara novamente a mesma requisicao original, marcando-a como _isRetry para apenas tentar 2 vezes
         return await request(service, path, { ...options, _isRetry: true })
       } catch (refreshErr) {
         console.error("Sessão expirada permanentemente. Forçando logout.")
@@ -68,7 +67,7 @@ async function request(service, path, options = {}) {
       }
     }
 
-    // Se for qualquer outro tipo de erro, apenas repassa para o serviço tratar se necessário
+    //se for qualquer outro tipo de erro, apenas repassa para o serviço tratar se necessário
     throw error
   }
 }

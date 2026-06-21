@@ -7,11 +7,11 @@ export async function login(email, password) {
   try {
     data = await api.post('admin', '/auth/login', { email: email, password: password })
   } catch (error) {
-    // Credenciais rejeitadas pelo backend (tem status HTTP) -> mensagem do servidor
+    //credenciais rejeitadas pelo backend (tem status HTTP) -> mensagem do servidor
     if (error.status) {
       throw new Error(error.detail || 'E-mail ou senha inválidos.')
     }
-    // Falha de rede / servidor indisponível
+    //falha de rede / servidor indisponível
     throw new Error('Não foi possível conectar ao servidor. Tente novamente.')
   }
 
@@ -22,7 +22,7 @@ export async function login(email, password) {
 
   localStorage.setItem('token', token)
   if (data.refresh_token) localStorage.setItem('refreshToken', data.refresh_token)
-  // Novo login: descarta favoritos em cache de uma sessão anterior
+  //novo login: descarta favoritos em cache de uma sessao anterior
   localStorage.removeItem('favorites')
 
   const decoded = jwtDecode(token)
@@ -30,7 +30,7 @@ export async function login(email, password) {
     id: decoded.sub,
     name: decoded.name || 'Usuário',
     email: decoded.email || email,
-    isAdmin: decoded.isAdmin === 'True' || decoded.isAdmin === true,
+    isAdmin: decoded.isAdmin === 'True' || decoded.isAdmin === true, //em pytoh, ha retorno de True com maiuscula
   }
 }
 
@@ -44,7 +44,7 @@ export async function register(name, email, password) {
     }
     throw new Error('Não foi possível conectar ao servidor. Tente novamente.')
   }
-
+  //registro bem sucedido
   if (data.access_token) localStorage.setItem('token', data.access_token)
   if (data.refresh_token) localStorage.setItem('refreshToken', data.refresh_token)
   localStorage.removeItem('favorites')

@@ -4,25 +4,22 @@ import logging
 from datetime import datetime
 from app.main import PLACES_SERVICE_URL, KEY_TICKETMASTER
 
-# Configuração de Logs
+#log da procura: terminal da api 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
-
-
-class BaseEventCrawler:
-    """Classe base contendo a lógica de envio para a API FastAPI."""
+class BaseEventCrawler: #classe base (abstrata) de procura de eventos
     def __init__(self, admin_token):
-        self.api_url = PLACES_SERVICE_URL
-        self.admin_token = admin_token
+        self.api_url = PLACES_SERVICE_URL #api de lugares para adicao no banco
+        self.admin_token = admin_token #token de admin para as acoes
 
-    def enviar_para_api(self, evento_data: dict):
-        headers = {
+    def enviar_para_api(self, evento_data: dict): #funcao que adiciona o evento pela API de lugares
+        headers = { #header de autenticacao
             "Authorization": f"{self.admin_token}",
             "Content-Type": "application/json"
         }
-        try:
+        try: 
             resposta = requests.post(f"{self.api_url}/places", json=evento_data, headers=headers)
-            if resposta.status_code == 201:
+            if resposta.status_code == 201: #codigo de criacao -> deu tudo certo
                 logging.info(f"Evento '{evento_data['name']}' salvo no banco (Status: Pendente)!")
             else:
                 logging.error(f"Erro ao salvar '{evento_data['name']}': {resposta.status_code} - {resposta.text}")
@@ -34,13 +31,14 @@ class SearchEventIngresse(BaseEventCrawler):
         super().__init__(admin_token)
 
     def search(self):
+        #url da API interna da Ingresse (encontrada por meio de inspecao da network durante uso do site)
         url = "https://api-site.ingresse.com/events/search?company_id=1&title=ribeir%C3%A3o%20preto&iso_code=BRA-SP&size=40&offset=0&order_by_date=true"
         logging.info("Iniciando busca de eventos na Ingresse...")
         
         try:
             r = requests.get(url, timeout=10)
             if r.status_code == 200:
-                dados = r.json()
+                dados = r.json() #resultados vem em json
                 self._processar_e_enviar(dados)
             else:
                 logging.error(f"Erro na API Ingresse. Status code: {r.status_code}")
@@ -48,45 +46,50 @@ class SearchEventIngresse(BaseEventCrawler):
             logging.error(f"Erro de conexão com Ingresse: {e}")
 
     def _processar_e_enviar(self, dados_brutos):
-        eventos = dados_brutos.get("events", [])
+        eventos = dados_brutos.get("events", []) #os eventos vem dentro do container "eventos"
         logging.info(f"Encontrados {len(eventos)} possíveis eventos na Ingresse.")
 
         for evento in eventos:
             try:
-                place = evento.get("place", {})
+                place = evento.get("place", {}) 
                 if not place or "ribeir" not in place.get("city", "").lower():
                     continue
                 
-                nome = evento.get("title", "Evento sem nome")
-                slug = evento.get("slug", "")
+                nome = evento.get("title")
+                if not nome:
+                    continue
+                slug = evento.get("slug", "") #parte final da url do evento no site
                 url_compra = f"https://ingresse.com/{slug}"
-                imagem_url = evento.get("poster", {}).get("large", "")
+                imagem_url = evento.get("poster", {}).get("large", "") #pega a imagem do site
                 
-                # Tratamento de Data
-                data_crua = evento.get("session", {}).get("dateTime", "")
+                #tratamento da data
+                data_crua = evento.get("session", {}).get("dateTime", "") 
+                #apenas vem uma informacao de data, suponhamos que so vai durar um dia
                 data_formatada = f"{data_crua[:10]}T00:00:00" if data_crua else None
                 
-                # Tratamento de Endereço
-                endereco_completo = place.get("street", "")
-                cep = place.get("zip", "")
+                #tratamento do endereço
+                endereco_completo = place.get("street", "") 
+                cep = place.get("zip", "") 
                 rua = ""
                 numero = ""
                 
                 if endereco_completo:
-                    endereco_cortado = endereco_completo.split(" ")
+                    endereco_cortado = endereco_completo.split(" ")#vem em formato Rua, numero
                     numero = endereco_cortado[-1]
                     rua = endereco_completo.replace(numero, "").strip()
                 
-                # Busca de Bairro pelo ViaCEP
+                #nao ha informacao de bairro no resultado, procurando no viacep
                 bairro = ""
                 if cep:
                     cep_formatado = cep.replace("-", "")
                     url_viacep = f"https://viacep.com.br/ws/{cep_formatado}/json/"
                     r_viacep = requests.get(url_viacep)
                     if r_viacep.status_code == 200:
-                        bairro = r_viacep.json().get("bairro", "")
+                        dados = r_viacep.json()
+                        bairro = dados.get("bairro", "")
+                        rua = dados.get("logradouro")
 
-                nome_local = place.get('name', 'Local indisponível')
+                nome_local = place.get('name', '(Local indisponível)')
                 descricao = f"Evento acontecerá no {nome_local}. Compre seu ingresso pela Ingresse: {url_compra}."
 
                 payload = {
@@ -115,17 +118,17 @@ class SearchEventIngresse(BaseEventCrawler):
 class SearchTicketmaster(BaseEventCrawler):
     def __init__(self, admin_token):
         super().__init__(admin_token)
-        self.api_key = KEY_TICKETMASTER
-        self.lat_rp = -21.1767
-        self.lon_rp = -47.8208
-        self.radius = 25 
-        self.base_url = "https://app.ticketmaster.com/discovery/v2/events.json"
-        self.headers = {
+        self.api_key = KEY_TICKETMASTER #chave gratuita obtida apos cadastro no ticketmaster
+        self.lat_rp = -21.1767 #latitude ribeirao
+        self.lon_rp = -47.8208 #longitude ribeirao
+        self.radius = 25 #raio maximo de busca
+        self.base_url = "https://app.ticketmaster.com/discovery/v2/events.json" #url das requisicoes
+        self.headers = { #header para evitar bloqueio
             "User-Agent": "RotaRibeiraoBot/1.0 (sabrinascarvalho@usp.br)"
         }
     
     def search(self):
-        now = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+        now = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ') #data de agora para filtragem
         params = {
             "apikey": self.api_key,
             "latlong": f"{self.lat_rp},{self.lon_rp}",
@@ -142,7 +145,7 @@ class SearchTicketmaster(BaseEventCrawler):
             
             if r.status_code == 200:
                 dados = r.json()
-                if '_embedded' in dados and 'events' in dados['_embedded']:
+                if '_embedded' in dados and 'events' in dados['_embedded']: #container embeded
                     eventos_brutos = dados['_embedded']['events']
                     self._processar_e_enviar(eventos_brutos)
                 else:
@@ -158,13 +161,16 @@ class SearchTicketmaster(BaseEventCrawler):
         
         for evento in eventos_brutos:
             try:
-                nome = evento.get('name', 'Nome Indisponível')
+                nome = evento.get('name')
+                if not nome:
+                    continue
+
                 url_compra = evento.get('url', '')
                 
                 #tratando a data
                 data_str = None
                 if 'dates' in evento and 'start' in evento['dates']:
-                    start_data = evento['dates']['start']
+                    start_data = evento['dates']['start']#apenas uma informacao de data tbm
                     local_date = start_data.get('localDate', '')
                     local_time = start_data.get('localTime', '00:00:00')
                     if local_date:
@@ -175,7 +181,7 @@ class SearchTicketmaster(BaseEventCrawler):
                 imagem_url = ""
                 imagens = evento.get('images', [])
                 for img in imagens:
-                    if img.get('ratio') == "16_9":
+                    if img.get('ratio') == "16_9": #preferencia por imagens com orientacao de paisagem
                         imagem_url = img.get('url', '')
                         break
                 if not imagem_url and imagens:
@@ -193,7 +199,7 @@ class SearchTicketmaster(BaseEventCrawler):
                         cep = venue.get('postalCode', '')
                         
                         location = venue.get('location', {})
-                        if location:
+                        if location: #pegando as coordenadas para encontrar a rua, numero e bairro pela API Nominatim
                             lon = location.get('longitude')
                             lat = location.get('latitude')
                             

@@ -143,7 +143,6 @@ def create_place(lugar_schema: CriacaoLugarSchema, session: Session = Depends(ge
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Este local já está cadastrado neste endereço.")
     
     status_lugar = lugar_schema.status
-    is_ativo = True if status_lugar == "ativo" else False
 
     if lugar_schema.type == "evento":
         db_place = Evento(nome=lugar_schema.name, rua=lugar_schema.street, numero_rua=lugar_schema.number,
@@ -152,14 +151,13 @@ def create_place(lugar_schema: CriacaoLugarSchema, session: Session = Depends(ge
                         descricao=lugar_schema.description, tipo='evento', image_url=lugar_schema.image,
                         data_inicio=lugar_schema.eventStartDate,
                         data_fim=lugar_schema.eventFinishDate, status=status_lugar,
-                        ativo=is_ativo
                     )
     else:
         db_place = Lugar(nome=lugar_schema.name, rua=lugar_schema.street, numero_rua=lugar_schema.number,
                         bairro=lugar_schema.district, cep=lugar_schema.cep, categoria=lugar_schema.category.lower(),
                         tags=lugar_schema.occasion.lower(), preco=lugar_schema.priceLevel, nota=lugar_schema.rating,
                         descricao=lugar_schema.description, tipo=lugar_schema.type, image_url=lugar_schema.image,
-                        status=status_lugar, ativo=is_ativo)
+                        status=status_lugar)
     
     session.add(db_place)
     session.commit()
@@ -179,7 +177,6 @@ def deativate_place(id_place: int,  usuario: dict = Depends(verificar_admin), se
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lugar não encontrado")
 
     lugar.status = "desativado"
-    lugar.ativo = False # Tranca a coluna booleana também!
     session.commit()
     return {"detail": "Lugar desativado com sucesso"}
 
@@ -194,7 +191,6 @@ def ativate_place(id_place: int,  usuario: dict = Depends(verificar_admin), sess
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lugar não encontrado")
 
     lugar.status = "ativo"
-    lugar.ativo = True 
     session.commit()
     return {"detail": "Lugar ativado com sucesso"}
 

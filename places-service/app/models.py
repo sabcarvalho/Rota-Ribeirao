@@ -16,8 +16,6 @@ if env_path.exists():
 else:
     load_dotenv() #quando rodado em docker, vem automaticamente pelo .env da pasta raiz
 
-
-
 db_url = os.getenv("DATABASE_URL")
 db = create_engine(db_url)
 
@@ -41,14 +39,13 @@ class Lugar(Base):
     nota = Column("nota", Float)
     qntd_reviews = Column("qntd_reviews", Integer, default=0)
     descricao = Column("descricao", Text)
-    ativo = Column("ativo", Boolean, default=True)
     tipo = Column(String(20)) # 'fixo' ou 'evento'
     image_url = Column(String(500), nullable=True) #link para a imagem do lugar
     status = Column(String, default="pendente", nullable=False)
 
 
     def __init__(self, nome, rua, numero_rua, bairro, cep, categoria,
-                 tags, preco, nota, descricao, tipo, image_url, ativo, status):
+                 tags, preco, nota, descricao, tipo, image_url, status):
         self.nome = nome
         self.rua = rua
         self.numero_rua = numero_rua
@@ -61,7 +58,6 @@ class Lugar(Base):
         self.descricao = descricao
         self.tipo = tipo
         self.image_url = image_url
-        self.ativo = ativo
         self.status = status
 
     @property

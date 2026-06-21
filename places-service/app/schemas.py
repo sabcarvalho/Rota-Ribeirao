@@ -65,7 +65,6 @@ class LugarResponseSchema(BaseModel):
     type: str = Field(validation_alias="tipo")
     image: Optional[str] = Field(default=None, validation_alias="image_url")
     event: EventoResponseSchema | None = Field(default=None, validation_alias="evento")
-    ativo: bool = Field(serialization_alias="active")
     status: str 
 
     class Config:

@@ -4,19 +4,17 @@ from ddgs import DDGS
 import logging
 from app.main import PLACES_SERVICE_URL
 
-# Configuração de Logs
+#log da procura: terminal da api 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
 
 class SearchPlacesOverpass:
     def __init__(self, categoria_schema, admin_token):
-        """
-        Inicializa a busca com a URL da sua API e o Token de Administrador.
-        """
         self.api_url = PLACES_SERVICE_URL
         self.admin_token = admin_token
         self.img_default = ""
         self.categoria_schema = categoria_schema
+        
         #mapeamento das tags do OverPass e setup de imagens padroes caso nao encontre imagens para os lugares
         if categoria_schema == "bar":
             self.amenity = "bar|pub|nightclub"
@@ -33,14 +31,14 @@ class SearchPlacesOverpass:
         else:
             raise ValueError("Tipo nao encontrado. Tipos esperados: bar, restaurante, cafe e mercado")
         
-        #mapeamento das possiveis tags do OverPass para a atribuicao de uma tag correta
+        #mapeamento das possiveis tags do OverPass para a atribuicao de uma tag (ocasiao) correta
         self.heuristic_rules = {
-            "família": {
+            "familia": {
                 "amenity": ["ice_cream", "toy_library", "theme_park"],
                 "leisure": ["park", "playground", "water_park"],
                 "cuisine": ["pizza", "ice_cream", "burger", "buffet"]
             },
-            "comemoração": {
+            "comemoracao": {
                 "amenity": ["nightclub", "events_venue", "casino"],
                 "cuisine": ["steakhouse", "japanese", "seafood", "fine_dining"]
             },
@@ -57,7 +55,6 @@ class SearchPlacesOverpass:
         }
 
     def classify_by_tags(self, tags: dict) -> str:
-        """Analisa as tags e retorna uma string com as ocasiões separadas por vírgula."""
         occasions = set()
         
         amenity = tags.get("amenity", "").lower()
@@ -65,7 +62,8 @@ class SearchPlacesOverpass:
         cuisine = tags.get("cuisine", "").lower()
         tourism = tags.get("tourism", "").lower()
 
-        for occasion, rules in self.heuristic_rules.items():
+        for occasion, rules in self.heuristic_rules.items(): 
+            #procurando pelas tags retornadas para ver o encaixe nas ocasioes (familia, comemoracao, amigos e encontro)
             if amenity in rules.get("amenity", []): occasions.add(occasion)
             if leisure in rules.get("leisure", []): occasions.add(occasion)
             if tourism in rules.get("tourism", []): occasions.add(occasion)
@@ -77,7 +75,7 @@ class SearchPlacesOverpass:
         #se nao encontrou nada nas tags, definir tags genericas
         if not occasions:
             if amenity in ["restaurant", "food_court"]:
-                occasions.update(["família", "amigos"])
+                occasions.update(["familia", "amigos"])
             elif amenity in ["bar", "pub"]:
                 occasions.update(["amigos", "encontro"])
             else:
@@ -86,7 +84,6 @@ class SearchPlacesOverpass:
         return ",".join(occasions)
 
     def _buscar_endereco(self, lat: float, lon: float, headers: dict) -> dict:
-        """Realiza a geocodificação reversa e busca o CEP via ViaCEP."""
         endereco = {
             "rua": "Rua não encontrada",
             "numero": "N/A",
@@ -94,6 +91,7 @@ class SearchPlacesOverpass:
             "cep": "00000-000"
         }
         
+        #procurando informacoes de rua, numero, bairro e cep pelo Nominatim
         url_nominatim = f"https://nominatim.openstreetmap.org/reverse?lat={lat}&lon={lon}&format=json"
         time.sleep(2) #dando timeout para nao ser bloqueado pela api do nominatim
         
@@ -121,12 +119,11 @@ class SearchPlacesOverpass:
             
         return endereco
 
-    def _buscar_imagem(self, nome: str) -> str:
-        """Busca a primeira imagem no DuckDuckGo de forma segura."""
+    def _buscar_imagem(self, nome: str) -> str: 
         nome_formatado = nome.replace(" ", "+")
         query = f"{nome_formatado}+ribeirao+preto+{self.categoria_schema}+fachada+estabelecimento"
         
-        try:  
+        try:  #procurando imagens no motor de busca DuckDuckGo
             resultados = list(DDGS().images(
                 query=query, 
                 region="br-br",
@@ -143,15 +140,14 @@ class SearchPlacesOverpass:
         return self.img_default
     
     def enviar_para_api(self, lugar_data: dict):
-        """Envia o dicionário formatado para a rota FastAPI."""
-        headers = {
+        headers = {#header de autenticacao
             "Authorization": f"{self.admin_token}",
             "Content-Type": "application/json"
         }
         
         try:
             resposta = requests.post(f"{self.api_url}/places", json=lugar_data, headers=headers)
-            if resposta.status_code == 201:
+            if resposta.status_code == 201: #codigo de criacao -> deu tudo certo
                 logging.info(f"{lugar_data['name']} salvo com sucesso no banco!")
             else:
                 logging.error(f"Erro ao salvar {lugar_data['name']}: {resposta.status_code} - {resposta.text}")
@@ -159,10 +155,9 @@ class SearchPlacesOverpass:
             logging.error(f"Erro de conexão com a API: {e}")
 
     def search(self):
-        """Método principal que coordena a busca e o envio dos dados."""
         #pesquisando lugares, dada o tipo (com os amenities) e as coordenadas no centro de ribeirao
         query = f'[out:json];(nwr["amenity"~"{self.amenity}"](around:5000,-21.1767,-47.8208););out center;'
-        headers_overpass = { #como a api eh publica, eh preciso identificacao
+        headers_overpass = { #como a api eh publica, eh preciso identificacao para nao ser bloqueado
             "User-Agent": "RotaRibeiraoBot/1.0 (sabrinascarvalho@usp.br)"
         }
         
@@ -204,13 +199,11 @@ class SearchPlacesOverpass:
                 lat = resultado.get('lat') or resultado.get("center", {}).get("lat", "")
                 lon = resultado.get('lon') or resultado.get("center", {}).get("lon", "")
 
-                if not lat or not lon:
+                if not lat or not lon: #apenas locais com coordenadas
                     continue
                 
-
                 endereco = self._buscar_endereco(lat, lon, headers_overpass)
                 
-
                 imagem = self._buscar_imagem(nome)
 
                 payload = {
@@ -221,8 +214,8 @@ class SearchPlacesOverpass:
                     "cep": endereco["cep"],
                     "category": self.categoria_schema,
                     "occasion": ocasioes,
-                    "priceLevel": 1, # Padrão para lugares novos
-                    "rating": 0.0,   # Sem avaliações no início
+                    "priceLevel": 1, #padrao para lugares novos
+                    "rating": 0.0,   #sem avaliações no inicio
                     "description": descricao.strip(),
                     "type": "fixo",
                     "image": imagem,

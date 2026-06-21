@@ -1,6 +1,106 @@
 import { api } from './api'
 import { refreshToken } from './authService'
 
+export const MOCK_PLACES = [
+  {
+    id: 1,
+    name: 'Restaurante Sinhá Moça',
+    category: 'restaurante',
+    address: 'Av. Costábile Romano, 2201 - Ribeirânia',
+    rating: 4.7,
+    priceLevel: 3,
+    occasion: ['familia', 'comemoracao'],
+    description: 'Tradicional restaurante de culinária brasileira, famoso pelos pratos mineiros e o ambiente aconchegante.',
+    reviews: [
+      { id: 1, author: 'Maria S.', rating: 5, comment: 'Comida incrível! O frango com quiabo é imperdível.', date: '2025-05-10' },
+      { id: 2, author: 'João P.', rating: 4, comment: 'Ótimo atendimento, lugar espaçoso para a família.', date: '2025-04-22' },
+    ],
+  },
+  {
+    id: 2,
+    name: 'Barão Bar',
+    category: 'bar',
+    address: 'Rua Duque de Caxias, 780 - Centro',
+    rating: 4.4,
+    priceLevel: 2,
+    occasion: ['encontro', 'amigos'],
+    description: 'Bar animado no centro com boa seleção de cervejas artesanais e petiscos.',
+    reviews: [
+      { id: 1, author: 'Lucas M.', rating: 4, comment: 'Ótimas cervejas artesanais e ambiente descontraído.', date: '2025-05-18' },
+    ],
+  },
+  {
+    id: 3,
+    name: 'Choperia Americana',
+    category: 'bar',
+    address: 'R. Visconde de Inhaúma, 392 - Centro',
+    rating: 4.2,
+    priceLevel: 2,
+    occasion: ['amigos', 'comemoracao'],
+    description: 'Clássica choperia do centro, ponto de encontro ribeirão-pretano há décadas.',
+    reviews: [],
+  },
+  {
+    id: 4,
+    name: 'Café Colonial Sabores',
+    category: 'cafe',
+    address: 'Rua Álvares Cabral, 1450 - Jardim América',
+    rating: 4.8,
+    priceLevel: 2,
+    occasion: ['encontro', 'familia'],
+    description: 'Café charmoso com decoração acolhedora, famoso pelos bolos caseiros e café especial.',
+    reviews: [
+      { id: 1, author: 'Ana C.', rating: 5, comment: 'Melhor café da cidade! Bolo de laranja divino.', date: '2025-05-01' },
+    ],
+  },
+  {
+    id: 5,
+    name: 'Festival de Jazz de Ribeirão',
+    category: 'evento',
+    address: 'Parque Curupira - Ribeirão Preto',
+    rating: 4.9,
+    priceLevel: 3,
+    occasion: ['comemoracao', 'encontro', 'amigos'],
+    eventDate: '2025-08-15',
+    description: 'Festival anual de jazz que reúne artistas nacionais e internacionais no Parque Curupira.',
+    reviews: [
+      { id: 1, author: 'Pedro A.', rating: 5, comment: 'Experiência incrível! Já é tradição na minha agenda.', date: '2025-03-15' },
+    ],
+  },
+  {
+    id: 6,
+    name: 'Mercado Municipal de RP',
+    category: 'mercado',
+    address: 'Av. Jerônimo Gonçalves, 80 - Centro',
+    rating: 4.3,
+    priceLevel: 1,
+    occasion: ['familia'],
+    description: 'Mercado tradicional com feiras de produtos frescos, artesanato e comidas típicas da região.',
+    reviews: [],
+  },
+  {
+    id: 7,
+    name: 'Restaurante Panelão',
+    category: 'restaurante',
+    address: 'R. General Osório, 560 - Centro',
+    rating: 4.1,
+    priceLevel: 1,
+    occasion: ['familia', 'amigos'],
+    description: 'Self-service com variedade de pratos caseiros e preço acessível no coração da cidade.',
+    reviews: [],
+  },
+  {
+    id: 8,
+    name: 'The Pub Ribeirão',
+    category: 'bar',
+    address: 'Shopping Iguatemi - Av. Nações Unidas, 3501',
+    rating: 4.0,
+    priceLevel: 3,
+    occasion: ['encontro', 'amigos'],
+    description: 'Bar estilo pub inglês com menu variado de drinques e hambúrgueres artesanais.',
+    reviews: [],
+  },
+]
 
 function mapPlaceToFrontend(backendPlace) {
   if (!backendPlace) return null
@@ -57,7 +157,7 @@ function mapPlaceToBackend(frontendPlace) {
 }
 
 
-// Ordenação alfabética por nome (ignora maiúsculas e acentos, regra pt-BR)
+//ordenação alfabetica por nome (ignora maiusculas e acentos, regra pt-BR)
 function ordenarPorNome(a, b) {
   return (a.name || '').localeCompare(b.name || '', 'pt-BR', { sensitivity: 'base' })
 }
@@ -92,9 +192,9 @@ export async function getPlaceById(id) {
     console.error("getPlaceById foi chamada com um ID inválido:", id)
     return null
   }
-  const idList = Array.isArray(id) ? id : [id]
+  const idList = Array.isArray(id) ? id : [id] //se eh mais de um id
 
-  const queryString = idList.map(e => `ids=${e}`).join('&')
+  const queryString = idList.map(e => `ids=${e}`).join('&') //precisa ser formatado para a requisicao
   const search = `?${queryString}`
 
   try {
@@ -117,7 +217,6 @@ export async function toggleFavoritePlace(id_place, isFav) {
   }else{
     response = await api.delete('admin', `/favorites/${id_place}`)
   }
-  
   return response
 }
 export async function getPlacesAdmin(){
@@ -168,14 +267,17 @@ export async function createPlace(data) {
   const response = await api.post('places', '/places', new_data)
   return  mapPlaceToFrontend(response)
 }
+
 export async function updatePlace(id_place, data) {
   const new_data = mapPlaceToBackend(data)
   const response = await api.patch('places', `/places/${id_place}`, new_data)
   return mapPlaceToFrontend(response)
 }
+
 export async function startSearchPlaces(type_place) {
   return await api.post('admin', `/crawlers/places/${type_place}`, {})
 }
+
 export async function startSearchEvents() {
   return await api.post('admin', '/crawlers/events', {})
 }
@@ -183,6 +285,7 @@ export async function startSearchEvents() {
 export async function deletePlace(id) {
   return await api.delete('places', `/places/${id}`)
 }
+
 export async function updateStatusPlace(id, newStatus) {
   if(newStatus)
     return await api.post('places', `/places/${id}/activate`, {})
