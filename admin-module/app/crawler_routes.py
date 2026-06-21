@@ -5,7 +5,7 @@ from app.search_events import SearchEventIngresse, SearchTicketmaster
 
 crawler_router = APIRouter(
     prefix="/crawlers", 
-    tags=["Admin Crawlers"]
+    tags=["Crawlers"]
 )
 
 # Função que vai rodar escondida

@@ -8,7 +8,7 @@ import requests
 #todas as rotas desse arquivo terao o /places
 favorites_router = APIRouter(
     prefix="/favorites",
-    tags=["favoritos"]
+    tags=["Favoritos"]
 )
 
 @favorites_router.get("")

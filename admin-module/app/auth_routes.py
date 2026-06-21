@@ -11,7 +11,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 #todas as rotas desse arquivo terao o /auth
 auth_router = APIRouter(
     prefix="/auth",
-    tags=["autenticacao"]
+    tags=["Autenticacao"]
 )
 
 #funcao de criacao de token jwt
