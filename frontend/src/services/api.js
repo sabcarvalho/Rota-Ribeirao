@@ -1,10 +1,10 @@
 import { TokenExpiredError, UnauthorizedError } from './errors_classes'
 
 const SERVICES = {
-  admin:          import.meta.env.VITE_ADMIN_URL          || 'http://localhost:8003',
-  places:         import.meta.env.VITE_PLACES_URL         || 'http://localhost:8000',
-  reviews:        import.meta.env.VITE_REVIEWS_URL        || 'http://localhost:8001',
-  recommendation: import.meta.env.VITE_RECOMMENDATION_URL || 'http://localhost:8002',
+  admin:          import.meta.env.VITE_ADMIN_URL          || 'https://rota-ribeirao-admin-module.onrender.com/',
+  places:         import.meta.env.VITE_PLACES_URL         || 'https://rota-ribeirao-places-service.onrender.com/',
+  reviews:        import.meta.env.VITE_REVIEWS_URL        || 'https://rota-ribeirao-reviews-service.onrender.com/',
+  recommendation: import.meta.env.VITE_RECOMMENDATION_URL || 'https://rota-ribeirao-recommendation-service.onrender.com/',
 }
 
 async function request(service, path, options = {}) {
