@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import PlaceCard from '../components/PlaceCard'
-import { getPlaceById, toggleFavoritePlace, getFavorites, getStorageCache,setStorageCache} from '../services/placesService'
+import { getPlaceById } from '../services/placesService'
+import { carregarFavoritos, toggleFavorite } from '../utils/favoriteHelper'
+import '../styles/layout.css'
 import './Favorites.css'
 
 export default function Favorites() {
@@ -12,52 +14,50 @@ export default function Favorites() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    async function carregarFavoritos() {
+    if (!user) {
+      setLoading(false)
+      return
+    }
+    let isMounted = true
+
+    async function obterDados() {
       try {
-        let ids = getStorageCache('favorites')
-
-        if (ids === null) {
-          console.log("Cache expirou ou não existe. Buscando do banco...")
-          ids = await getFavorites()
-        }
-        setFavoritesIds(ids)
-
-        if (ids.length > 0) {
-          const lugares = await getPlaceById(ids)
-          if(Array.isArray(lugares))
-            setFavoritePlaces(lugares)
-          else
-            setFavoritePlaces([lugares])
-          console.log(lugares)
+        const ids = await carregarFavoritos().catch(() => [])
+        const safeIds = Array.isArray(ids) ? ids : []
+        if (safeIds.length > 0) {
+          const lugares = await getPlaceById(safeIds)
+          if (isMounted) {
+            if (Array.isArray(lugares)) setFavoritePlaces(lugares)
+            else if (lugares) setFavoritePlaces([lugares])
+            setFavoritesIds(safeIds)
+          }
+        } else {
+          if (isMounted) setFavoritesIds(safeIds)
         }
       } catch (error) {
         console.error("Erro ao carregar tela de favoritos:", error)
       } finally {
-        setLoading(false)
+        if (isMounted) setLoading(false)
       }
     }
 
-    carregarFavoritos()
-  }, [])
+    obterDados()
+
+    return () => { isMounted = false }
+  }, [user])
 
   async function handleRemoveFavorite(idLugar) {
-    const backupIds = [...favoritesIds]
-    const backupPlaces = [...favoritePlaces]
-
-    const nextIds = favoritesIds.filter(id => id !== idLugar)
-    const nextPlaces = favoritePlaces.filter(p => p.id !== idLugar)
-
-    setFavoritesIds(nextIds)
-    setFavoritePlaces(nextPlaces)
-    setStorageCache('favorites', nextIds, 30) 
-
     try {
-      await toggleFavoritePlace(idLugar, false)
+      await toggleFavorite({
+        id: idLugar,
+        isFavorite: true,
+        favoritesList: favoritesIds,
+        setFavoritesState: setFavoritesIds,
+        showToast: null,
+      })
+      setFavoritePlaces(prev => prev.filter(p => p.id !== idLugar))
     } catch (error) {
       console.error("Não foi possível remover o favorito do servidor:", error)
-      setFavoritesIds(backupIds)
-      setFavoritePlaces(backupPlaces)
-      setStorageCache('favorites', backupIds, 30)
       alert("Erro ao remover favorito. Tente novamente.")
     }
   }
@@ -67,8 +67,7 @@ export default function Favorites() {
       <div className="page-wrapper favorites-page">
         <div className="container">
           <div className="empty-state">
-            <i className="fa-solid fa-lock"></i>
-            <p>Você precisa estar logado para ver seus favoritos.</p>
+            <p>Faça login para ter favoritos.</p>
             <Link to="/login" className="btn btn--primary">
               <i className="fa-solid fa-right-to-bracket"></i> Entrar
             </Link>
@@ -94,14 +93,13 @@ export default function Favorites() {
 
         {favoritePlaces.length === 0 ? (
           <div className="empty-state">
-            <i className="fa-regular fa-heart"></i>
             <p>Explore lugares e clique no coração para salvar aqui.</p>
             <Link to="/" className="btn btn--primary">
               <i className="fa-solid fa-compass"></i> Explorar lugares
             </Link>
           </div>
         ) : (
-          <div className="favorites-grid">
+          <div className="places-grid">
             {favoritePlaces.map(place => (
               <PlaceCard
                 key={place.id}

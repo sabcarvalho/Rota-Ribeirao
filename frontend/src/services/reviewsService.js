@@ -3,44 +3,28 @@ import { refreshToken } from './authService';
 import { TokenExpiredError } from './errors_classes';
 
 export async function getPlaceReviews(id_place) {
-  try {
-    return await api.get('reviews', `/places/${id_place}/reviews`);
-  } catch (error) {
-    if (error.status === 401 || error.detail?.code === "TOKEN_EXPIRED") {
-      try {
-        await refreshToken(); 
-        return await api.get('reviews', `/places/${id_place}/reviews`);
-      } catch (refreshErr) {
-        if(refreshErr instanceof TokenExpiredError){
-          console.error("Refresh token também expirou. Forçando logout.");
-        }
-        throw refreshErr;
-      }
-    } else {
-      console.error("Erro na requisição: ", error);
-      throw error;
-    }
-  }
+  return await api.get('reviews', `/places/${id_place}/reviews`);
+}
+
+export async function getUserReviews(id_usuario) {
+  return await api.get('reviews', `/reviews/user/${id_usuario}`);
 }
 
 export async function addReview(id_place, data) {
+  return await api.post('reviews', `/places/${id_place}/reviews`, data);
+}
+
+export async function deleteReview(id_review) {
+  return await api.delete('reviews', `/reviews/${id_review}`);
+}
+
+export async function getReviewsCount() {
   try {
-    return await api.post('reviews', `/places/${id_place}/reviews`, data);
+    const data = await api.get('reviews', '/reviews/count');
+    return data?.total || 0;
   } catch (error) {
-    if (error.status === 401 || error.detail?.code === "TOKEN_EXPIRED") {
-      try {
-        await refreshToken(); 
-        return await api.post('reviews', `/places/${id_place}/reviews`, data);
-      } catch (refreshErr) {
-        if(refreshErr instanceof TokenExpiredError){
-          console.error("Refresh token também expirou. Forçando logout.");
-        }
-        throw refreshErr;
-      }
-    } else {
-      console.error("Erro na requisição: ", error);
-      throw error;
-    }
+    console.error("Erro ao contar avaliações:", error);
+    return 0;
   }
 }
 

@@ -6,7 +6,7 @@ export class TokenExpiredError extends Error{
     }
 }
 
-export class UnautorizedError extends Error{
+export class UnauthorizedError extends Error{
     constructor(message){
         super(message);
 

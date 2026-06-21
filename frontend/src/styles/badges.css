@@ -1,0 +1,24 @@
+/* ============================================================
+   badges.css — Selos de categoria e estrelas de avaliação
+   Uso: <span class="badge badge--orange">Restaurante</span>
+   ============================================================ */
+
+.stars {
+  color: var(--star);
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge--orange { background: #fff3e0; color: #9a3412; }
+.badge--blue   { background: #e3f2fd; color: #1565c0; }
+.badge--green  { background: #e8f5e9; color: #1b5e20; }
+.badge--red    { background: #fce4ec; color: #c62828; }
+.badge--purple { background: #f3e5f5; color: #6a1b9a; }

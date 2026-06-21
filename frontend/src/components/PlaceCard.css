@@ -17,13 +17,26 @@
 
 .place-card__image {
   height: 200px;
-  background-size: cover;
-  background-position: center;
   background-color: var(--light-gray);
   position: relative;
   display: flex;
   align-items: flex-start;
   padding: 12px;
+  overflow: hidden;
+}
+
+.place-card__photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}
+
+.place-card__image .badge {
+  position: relative;
+  z-index: 1;
 }
 
 .place-card__body {
@@ -46,16 +59,21 @@
 }
 
 .place-card__name:hover {
-  color: var(--primary);
+  color: var(--accent);
 }
 
 .place-card__fav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin: -8px -8px 0 0;
   background: none;
   border: none;
   color: var(--light-gray);
   font-size: 1.1rem;
   cursor: pointer;
-  padding: 4px;
   transition: var(--transition);
   flex-shrink: 0;
 }
@@ -64,6 +82,28 @@
 .place-card__fav.active {
   color: #e74c3c;
   transform: scale(1.2);
+}
+
+.place-card__fav--locked {
+  position: relative;
+  color: #c4c7cb;
+}
+
+.place-card__fav--locked:hover {
+  color: var(--gray);
+  transform: none;
+}
+
+.place-card__fav-lock {
+  position: absolute;
+  bottom: 7px;
+  right: 7px;
+  font-size: 0.58rem;
+  color: var(--gray);
+  background: var(--white);
+  border-radius: 50%;
+  padding: 2px;
+  line-height: 1;
 }
 
 .place-card__address {
@@ -106,4 +146,11 @@
   font-weight: 700;
   color: var(--gray);
   font-size: 0.9rem;
+}
+
+.place-card__no-reviews {
+  font-size: 0.8rem;
+  font-style: italic;
+  color: var(--gray);
+  opacity: 0.85;
 }

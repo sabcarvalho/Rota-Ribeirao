@@ -8,7 +8,7 @@ import requests
 #todas as rotas desse arquivo terao o /places
 favorites_router = APIRouter(
     prefix="/favorites",
-    tags=["favoritos"]
+    tags=["Favoritos"]
 )
 
 @favorites_router.get("")
@@ -36,7 +36,7 @@ def favorite_place(id_lugar: int, usuario: Usuario = Depends(verificar_token), s
     """
     try:
         #confirma se o local existe na API do Serviço de Lugares
-        response = requests.get(f"{PLACES_SERVICE_URL}search_place/?ids={id_lugar}")
+        response = requests.get(f"{PLACES_SERVICE_URL}/places?ids={id_lugar}")
     except requests.exceptions.RequestException:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY, 
@@ -92,7 +92,7 @@ async def delete_favorite_place(id_lugar: int, usuario: Usuario = Depends(verifi
 
     session.delete(favorito)
     session.commit()
-    return {"detail": "Lugar removido dos favoritos"}
+    return {"detail": "Lugar removido dos favoritos."}
 
 @favorites_router.delete("/place/{id_lugar}")
 async def delete_favorite_place_all(id_lugar: int, usuario: Usuario = Depends(verificar_token), session: Session = Depends(get_session)):

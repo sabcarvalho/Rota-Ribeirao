@@ -75,7 +75,7 @@
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 20px;
   text-align: center;
 }
@@ -109,11 +109,7 @@
   padding: 60px 0;
 }
 
-.places-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 24px;
-}
+
 
 /* Skeleton loading */
 .loading-grid {
@@ -135,11 +131,14 @@
   100% { background-position: -200% 0; }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 992px) {
   .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
+    row-gap: 28px;
   }
+}
 
+@media (max-width: 768px) {
   .home-places {
     padding: 40px 0;
   }
@@ -148,6 +147,6 @@
 @media (max-width: 480px) {
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
+    gap: 24px 12px;
   }
 }

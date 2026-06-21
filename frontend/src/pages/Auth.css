@@ -78,7 +78,7 @@
 }
 
 .auth-footer a {
-  color: var(--primary);
+  color: var(--accent);
   font-weight: 600;
 }
 
@@ -93,4 +93,10 @@
   background: var(--light-bg);
   border-radius: 8px;
   color: var(--gray);
+}
+
+.error-message {
+  color: #dc2626;
+  font-size: 0.875rem;
+  margin-top: 8px;
 }

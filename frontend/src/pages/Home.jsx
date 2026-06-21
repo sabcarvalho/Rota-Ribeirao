@@ -2,76 +2,93 @@ import { useState, useEffect } from 'react'
 import PlaceCard from '../components/PlaceCard'
 import { useAuth } from '../context/AuthContext'
 import FilterBar from '../components/FilterBar'
-import { getPlaces, getFavorites, getStorageCache, setStorageCache, toggleFavoritePlace} from '../services/placesService'
+import { getPlaces } from '../services/placesService'
+import { carregarFavoritos, toggleFavorite as toggleFavoriteUtil } from '../utils/favoriteHelper'
+import { getReviewsCount } from '../services/reviewsService'
+import { useToast } from '../components/Toast'
+import '../styles/layout.css'
 import './Home.css'
 
 export default function Home() {
   const {user} = useAuth()
+  const { showToast } = useToast()
   const [places, setPlaces]         = useState([])
   const [loading, setLoading]       = useState(true)
   const [favorites, setFavorites]   = useState([])
   const [filters, setFilters] = useState({
-    category: '', priceLevel: '', occasion: '', minRating: '',
+    name: '', category: '', priceLevel: '', occasion: '', minRating: '',
   })
+  const [stats, setStats] = useState({ restaurantes: 0, bares: 0, cafes: 0, eventos: 0, mercados: 0, avaliacoes: 0 })
 
   useEffect(() => {
-    async function carregarDadosHome() {
-      setLoading(true)
+    async function carregarStats() {
       try {
-        const promessas = [getPlaces(filters)]
-
-        if (user) {
-          console.log("Usuário logado. Preparando carga de favoritos...")
-          
-          const obterFavoritos = async () => {
-            let ids = getStorageCache('favorites')
-            if (ids === null) {
-              console.log("Cache expirou ou não existe. Buscando do banco...")
-              ids = await getFavorites()
-            }
-            return ids;
-          };
-
-          promessas.push(obterFavoritos())
-        }
-
-        const resultados = await Promise.all(promessas)
-        
-        const dadosLugares = resultados[0] //o primeiro sempre eh o getPlaces
-        setPlaces(dadosLugares);
-
-        if (user) {
-          const dadosFavoritos = resultados[1] //favoritos
-          setFavorites(dadosFavoritos || [])
-        } else {
-          setFavorites([]) // sem usuario, sem favoritos
-        }
+        const [todos, totalAvaliacoes] = await Promise.all([
+          getPlaces({}),
+          getReviewsCount(),
+        ])
+        setStats({
+          restaurantes: todos.filter(p => p.category === 'restaurante').length,
+          bares:        todos.filter(p => p.category === 'bar').length,
+          cafes:        todos.filter(p => p.category === 'cafe' || p.category === 'café').length,
+          eventos:      todos.filter(p => p.category === 'evento').length,
+          mercados:     todos.filter(p => p.category === 'mercado').length,
+          avaliacoes:   totalAvaliacoes,
+        })
       } catch (error) {
-        console.error("Erro ao carregar os dados da pagina inicial:", error)
-        if (!user) 
-          setFavorites([]);
-      } finally {
-        setLoading(false);
+        console.error('Erro ao carregar estatísticas:', error)
       }
     }
-    carregarDadosHome();
+    carregarStats()
+  }, [])
+
+  useEffect(() => {
+    let isMounted = true
+
+    async function carregarLugares() {
+      setLoading(true)
+      try {
+        const dadosLugares = await getPlaces(filters)
+        if (isMounted) setPlaces(dadosLugares)
+      } catch (error) {
+        console.error("Erro ao carregar os lugares:", error)
+      } finally {
+        if (isMounted) setLoading(false)
+      }
+    }
+
+    // Os lugares carregam independentemente dos favoritos (não bloqueiam a grade)
+    carregarLugares()
+
+    if (!user) {
+      setFavorites([])
+      return () => { isMounted = false }
+    }
+
+    // carregar favoritos usando helper centralizado
+    ;(async () => {
+      try {
+        const ids = await carregarFavoritos().catch(() => [])
+        if (isMounted) setFavorites(ids || [])
+      } catch (err) {
+        console.error('Erro ao carregar favoritos:', err)
+      }
+    })()
+
+    return () => { isMounted = false }
   }, [filters, user])
 
   async function toggleFavorite(id, isFavorite) {
-    let favs = favorites
-    setFavorites(prev => {
-      const next = prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id]
-      setStorageCache("favorites", next, 30)
-      return next
-    })
     try {
-      const response = await toggleFavoritePlace(id, !isFavorite)
-      
+      await toggleFavoriteUtil({
+        id,
+        isFavorite,
+        favoritesList: favorites,
+        setFavoritesState: setFavorites,
+        showToast,
+      })
     } catch (error) {
-      setStorageCache("favorites", favs, 30)
-      setFavorites(favorites)
-      console.log(error)
-      alert("Não foi possível salvar seu favorito. Tente novamente.")
+      console.error('Erro ao alternar favorito:', error)
     }
   }
 
@@ -104,22 +121,32 @@ export default function Home() {
           <div className="stats-grid">
             <div className="stat-item">
               <i className="fa-solid fa-utensils"></i>
-              <strong>200+</strong>
+              <strong>{stats.restaurantes}</strong>
               <span>Restaurantes</span>
             </div>
             <div className="stat-item">
               <i className="fa-solid fa-martini-glass"></i>
-              <strong>80+</strong>
+              <strong>{stats.bares}</strong>
               <span>Bares & Pubs</span>
             </div>
             <div className="stat-item">
+              <i className="fa-solid fa-mug-hot"></i>
+              <strong>{stats.cafes}</strong>
+              <span>Cafés</span>
+            </div>
+            <div className="stat-item">
               <i className="fa-solid fa-calendar-days"></i>
-              <strong>50+</strong>
-              <span>Eventos / mês</span>
+              <strong>{stats.eventos}</strong>
+              <span>Eventos</span>
+            </div>
+            <div className="stat-item">
+              <i className="fa-solid fa-store"></i>
+              <strong>{stats.mercados}</strong>
+              <span>Mercados</span>
             </div>
             <div className="stat-item">
               <i className="fa-solid fa-star"></i>
-              <strong>5.000+</strong>
+              <strong>{stats.avaliacoes}</strong>
               <span>Avaliações</span>
             </div>
           </div>
@@ -146,7 +173,7 @@ export default function Home() {
               <p>Nenhum lugar encontrado com esses filtros.</p>
               <button
                 className="btn btn--primary"
-                onClick={() => setFilters({ category: '', priceLevel: '', occasion: '', minRating: '' })}
+                onClick={() => setFilters({ name: '', category: '', priceLevel: '', occasion: '', minRating: '' })}
               >
                 Limpar filtros
               </button>

@@ -1,7 +1,6 @@
 import { api } from './api'
 import { refreshToken } from './authService'
 
-// Dados mock para desenvolvimento sem backend
 export const MOCK_PLACES = [
   {
     id: 1,
@@ -106,7 +105,6 @@ export const MOCK_PLACES = [
 function mapPlaceToFrontend(backendPlace) {
   if (!backendPlace) return null
 
-
   return {
     id: backendPlace.id,
     name: backendPlace.name,                               
@@ -114,11 +112,18 @@ function mapPlaceToFrontend(backendPlace) {
     image: backendPlace.image, 
     address: `${backendPlace.street}, ${backendPlace.number} - ${backendPlace.district}, CEP: ${backendPlace.cep}` || 'Endereço não informado', 
     description: backendPlace.description,
-    rating: backendPlace.rating, 
+    rating: backendPlace.rating,
     priceLevel: backendPlace.priceLevel,
     eventDate: backendPlace.event ? backendPlace.event.eventStartDate.slice(0, 10) : '',
+    eventStartDate: backendPlace.event ? backendPlace.event.eventStartDate.slice(0, 10) : '',
+    eventFinishDate: backendPlace.event ? backendPlace.event.eventFinishDate.slice(0, 10) : '',
     occasion: backendPlace.occasion.split(",") || [],
-    active: backendPlace.active
+    status: backendPlace.status,
+    street: backendPlace.street,
+    number: backendPlace.number,
+    district: backendPlace.district,
+    cep: backendPlace.cep,
+    type: backendPlace.type
   }
 }
 function mapPlaceToBackend(frontendPlace) {
@@ -133,28 +138,34 @@ function mapPlaceToBackend(frontendPlace) {
     : null;
 
   return {
-    name: frontendPlace.name.trim(),                               
-    category: frontendPlace.category.toLowerCase(), 
-    image: frontendPlace.image.trim(), 
-    street: frontendPlace.street.trim(),
-    number: frontendPlace.number.trim(),
-    district: frontendPlace.district.trim(),
-    cep: frontendPlace.cep.trim(),
-    description: frontendPlace.description.trim(),
-    rating: frontendPlace.rating, 
-    priceLevel: frontendPlace.priceLevel,
-    occasion: frontendPlace.occasion.join(),
-    type: frontendPlace.type,
+    name: frontendPlace.name ?  frontendPlace.name.trim() : null,                               
+    category: frontendPlace.category ?  frontendPlace.category.toLowerCase()  : null, 
+    image: frontendPlace.image ?  frontendPlace.image.trim(): null, 
+    street: frontendPlace.street ?  frontendPlace.street.trim(): null,
+    number: frontendPlace.number? frontendPlace.number.trim(): null,
+    district: frontendPlace.district? frontendPlace.district.trim(): null,
+    cep: frontendPlace.cep ? frontendPlace.cep.trim(): null,
+    description: frontendPlace.description? frontendPlace.description.trim(): null,
+    rating: frontendPlace.rating ? frontendPlace.rating: null, 
+    priceLevel: frontendPlace.priceLevel ? frontendPlace.priceLevel: null,
+    occasion: frontendPlace.occasion ? frontendPlace.occasion: null,
+    type: frontendPlace.type ?frontendPlace.type : null,
     eventStartDate: startDate,
     eventFinishDate: finishDate,
+    status: frontendPlace.status ? frontendPlace.status : null,
   }
 }
 
 
+//ordenação alfabetica por nome (ignora maiusculas e acentos, regra pt-BR)
+function ordenarPorNome(a, b) {
+  return (a.name || '').localeCompare(b.name || '', 'pt-BR', { sensitivity: 'base' })
+}
+
 export async function getPlaces(filters = {}) {
   try {
     const params = new URLSearchParams()
-    
+
     if (filters.name)        params.set('name',        filters.name)
     if (filters.eventType)        params.set('event_type',        filters.eventType)
     if (filters.category)    params.set('category',    filters.category)
@@ -163,16 +174,16 @@ export async function getPlaces(filters = {}) {
     if (filters.minRating)   params.set('min_rating',  filters.minRating)
 
     const response = await api.get('places', `/places?${params}`)
-    return response.map(mapPlaceToFrontend)
+    return response.map(mapPlaceToFrontend).sort(ordenarPorNome)
   } catch (error) {
     console.warn("Usando fallback de dados mockados para listagem de lugares", error)
-    
+
     let places = [...MOCK_PLACES]
     if (filters.category)  places = places.filter(p => p.category === filters.category)
     if (filters.priceLevel) places = places.filter(p => p.priceLevel <= Number(filters.priceLevel))
     if (filters.occasion)  places = places.filter(p => p.occasion.includes(filters.occasion))
     if (filters.minRating) places = places.filter(p => p.rating >= Number(filters.minRating))
-    return places
+    return places.sort(ordenarPorNome)
   }
 }
 
@@ -181,9 +192,9 @@ export async function getPlaceById(id) {
     console.error("getPlaceById foi chamada com um ID inválido:", id)
     return null
   }
-  const idList = Array.isArray(id) ? id : [id]
+  const idList = Array.isArray(id) ? id : [id] //se eh mais de um id
 
-  const queryString = idList.map(e => `ids=${e}`).join('&')
+  const queryString = idList.map(e => `ids=${e}`).join('&') //precisa ser formatado para a requisicao
   const search = `?${queryString}`
 
   try {
@@ -199,77 +210,27 @@ export async function getPlaceById(id) {
 }
 
 export async function toggleFavoritePlace(id_place, isFav) {
-  try {
-    let response = null
-    console.log(isFav)
-    if(isFav){
-      response = await api.post('admin', `/favorites/${id_place}`, {})
-    }else{
-      response = await api.delete('admin', `/favorites/${id_place}`)
-    }
-    
-    return response
-
-  } catch (error) {
-    if (error.detail?.code === "TOKEN_EXPIRED") {
-      try {
-        await refreshToken(); 
-        if(isFav){
-          response = await api.post('admin', `/favorites/${id_place}`, {})
-        }else{
-          response = await api.delete('admin', `/favorites/${id_place}`)
-        }
-      } catch (refreshErr) {
-        console.error("Refresh token também expirou. Forçando logout.");
-        throw refreshErr;
-      }
-    } else{
-      console.error("Erro ao favoritar o lugar: ", error)
-      throw error
-    }
-    
+  let response = null
+  console.log(isFav)
+  if(isFav){
+    response = await api.post('admin', `/favorites/${id_place}`, {})
+  }else{
+    response = await api.delete('admin', `/favorites/${id_place}`)
   }
+  return response
 }
 export async function getPlacesAdmin(){
-  try {
-
-    const response = await api.get('places', `/admin/places`)
-    return response.map(mapPlaceToFrontend)
-  } catch (error) {
-    console.warn("Usando fallback de dados mockados para listagem de lugares", error)
-    
-    let places = [...MOCK_PLACES]
-    return places
-  }
+  const response = await api.get('places', `/admin/places`)
+  return response.map(mapPlaceToFrontend)
 }
 
 export async function getFavorites() {
-  try {
-    const response = await api.get('admin', `/favorites`)
-    let apenasIds = []
-    if(response)
-      apenasIds = response.map(item => item.place_id)
-    setStorageCache("favorites", apenasIds, 30)
-    return apenasIds
-  } catch (error) {
-    if (error.detail?.code === "TOKEN_EXPIRED") {
-      try {
-        await refreshToken(); 
-        const response = await api.get('admin', `/favorites`)
-        let apenasIds = []
-        if(response)
-          apenasIds = response.map(item => item.place_id)
-        setStorageCache("favorites", apenasIds, 30)
-        return apenasIds;
-      } catch (refreshErr) {
-        console.error("Refresh token também expirou. Forçando logout.");
-        throw refreshErr;
-      }
-    } else{
-      console.error("Erro ao favoritar o lugar: ", error)
-      throw error
-    }
-  }
+  const response = await api.get('admin', `/favorites`)
+  let apenasIds = []
+  if(response)
+    apenasIds = response.map(item => item.place_id)
+  setStorageCache("favorites", apenasIds, 30)
+  return apenasIds
 }
 
 export function setStorageCache(key, value, ttlInMinutes) {
@@ -303,66 +264,33 @@ export function getStorageCache(key) {
 
 export async function createPlace(data) {
   const new_data = mapPlaceToBackend(data)
-  try {
-    
-    const response = await api.post('places', '/places', new_data)
-    return response
-  } catch (error) {
-    if (error.status === 401) {
-      try {
-        await refreshToken(); 
-        const response = await api.post('places', '/places', new_data)
-        return response.id
-      } catch (refreshErr) {
-        console.error("Refresh token também expirou. Forçando logout.");
-        throw refreshErr;
-      }
-    } else{
-      console.error("Erro ao criar o lugar: ", error)
-      throw error
-    }
-  }
+  const response = await api.post('places', '/places', new_data)
+  return  mapPlaceToFrontend(response)
+}
+
+export async function updatePlace(id_place, data) {
+  const new_data = mapPlaceToBackend(data)
+  const response = await api.patch('places', `/places/${id_place}`, new_data)
+  return mapPlaceToFrontend(response)
+}
+
+export async function startSearchPlaces(type_place) {
+  return await api.post('admin', `/crawlers/places/${type_place}`, {})
+}
+
+export async function startSearchEvents() {
+  return await api.post('admin', '/crawlers/events', {})
 }
 
 export async function deletePlace(id) {
-  try {
-    return await api.delete('places', `/places/${id}`)
-  } catch (error) {
-    if (error.status === 401) {
-      try {
-        await refreshToken(); 
-        return await api.delete('places', `/places/${id}`)
-      } catch (refreshErr) {
-        console.error("Refresh token também expirou. Forçando logout.");
-        throw refreshErr;
-      }
-    } else{
-      console.error("Erro ao deletar o lugar: ", error)
-      throw error
-    }
-  }
+  return await api.delete('places', `/places/${id}`)
 }
+
 export async function updateStatusPlace(id, newStatus) {
-  try {
-    if(newStatus)
-      return await api.post('places', `/places/${id}/activate`, {})
-    else
-      return await api.post('places', `/places/${id}/deactivate`, {})
-  } catch (error) {
-    if (error.status === 401) {
-      try {
-        await refreshToken(); 
-        if(newStatus)
-      return await api.post('places', `/places/${id}/activate`, {})
-    else
-      return await api.post('places', `/places/${id}/deactivate`, {})
-      } catch (refreshErr) {
-        console.error("Refresh token também expirou. Forçando logout.");
-        throw refreshErr;
-      }
-    } else{
-      console.error("Erro ao deletar o lugar: ", error)
-      throw error
-    }
-  }
+  if(newStatus)
+    return await api.post('places', `/places/${id}/activate`, {})
+  else
+    return await api.post('places', `/places/${id}/deactivate`, {})
 }
+
+export { mapPlaceToFrontend }

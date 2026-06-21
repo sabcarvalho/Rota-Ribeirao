@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getPlaceById, toggleFavoritePlace, getFavorites, getStorageCache,setStorageCache } from '../services/placesService'
-import { getPlaceReviews, addReview, calculateNewAverageRating } from '../services/reviewsService'
+import { getPlaceReviews, addReview, deleteReview, calculateNewAverageRating } from '../services/reviewsService'
 import { useAuth } from '../context/AuthContext'
+import { useToast } from '../components/Toast'
 import './PlaceDetail.css'
 
-function renderStars(rating, size = '1rem') {
+function renderStars(rating, className = '') {
   return Array.from({ length: 5 }, (_, i) => (
     <i
       key={i}
-      className={`fa-${i < Math.round(rating) ? 'solid' : 'regular'} fa-star`}
-      style={{ fontSize: size, color: 'var(--star)' }}
+      className={`fa-${i < Math.round(rating) ? 'solid' : 'regular'} fa-star detail-star${className ? ` ${className}` : ''}`}
     ></i>
   ))
 }
@@ -19,6 +19,7 @@ export default function PlaceDetail() {
   const { id }                  = useParams()
   const navigate                = useNavigate()
   const { user }                = useAuth()
+  const { showToast }           = useToast()
   const [place, setPlace]       = useState(null)
   const [loading, setLoading]   = useState(true)
   const [loadingReviews, setLoadingReviews] = useState(true)
@@ -83,16 +84,18 @@ export default function PlaceDetail() {
       const next = isFav ? favs.filter(f => f !== place.id) : [...favs, place.id]
       setStorageCache("favorites", next, 30)
       setIsFav(!isFav)
-      
+
       await toggleFavoritePlace(place.id, !isFav)
       setStorageCache('favorites', next, 30)
-      
+      showToast(
+        isFav ? 'Removido dos favoritos.' : 'Lugar adicionado aos favoritos!',
+        'success'
+      )
     } catch (error) {
       console.log(error)
       setIsFav(estadoAnterior)
       setStorageCache("favorites", favs, 30)
-      alert("Não foi possível salvar seu favorito. Tente novamente.")
-      
+      showToast('Não foi possível salvar seu favorito. Tente novamente.', 'error')
     }
   }
 
@@ -121,10 +124,37 @@ export default function PlaceDetail() {
     }
   }
 
+  function podeExcluir(review) {
+    if (!user) return false
+    return user.isAdmin || String(user.id) === String(review.id_usuario)
+  }
+
+  async function handleDeleteReview(reviewId) {
+    if (!confirm('Excluir esta avaliação?')) return
+
+    const backup = reviews
+    const restantes = reviews.filter(r => r.id !== reviewId)
+
+    // Atualização otimista: remove da lista e recalcula a média exibida
+    setReviews(restantes)
+    const novaMedia = restantes.length
+      ? Number((restantes.reduce((s, r) => s + r.rating, 0) / restantes.length).toFixed(1))
+      : 0
+    setPlace(prev => ({ ...prev, rating: novaMedia }))
+
+    try {
+      await deleteReview(reviewId)
+    } catch (error) {
+      console.error("Erro ao excluir avaliação:", error)
+      setReviews(backup)
+      alert("Não foi possível excluir a avaliação. Tente novamente.")
+    }
+  }
+
   if (loading) {
     return (
-      <div className="page-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <i className="fa-solid fa-spinner fa-spin" style={{ fontSize: '2rem', color: 'var(--primary)' }}></i>
+      <div className="page-wrapper loading-center">
+        <i className="fa-solid fa-spinner fa-spin spinner-lg"></i>
       </div>
     )
   }
@@ -133,9 +163,13 @@ export default function PlaceDetail() {
 
   return (
     <div className="page-wrapper">
-      <div className="detail-hero" style={{
-        backgroundImage: `linear-gradient(rgba(26,26,46,0.7),rgba(26,26,46,0.85)), url(${place.image})`
-      }}>
+      <div className="detail-hero">
+        <img
+          className="detail-hero__bg"
+          src={place.image || `https://picsum.photos/seed/${place.id}/1200/400`}
+          alt=""
+          aria-hidden="true"
+        />
         <div className="container">
           <button className="detail-back" onClick={() => navigate(-1)}>
             <i className="fa-solid fa-arrow-left"></i> Voltar
@@ -147,21 +181,32 @@ export default function PlaceDetail() {
               <i className="fa-solid fa-location-dot"></i> {place.address}
             </p>
             <div className="detail-meta">
-              <span className="stars">{renderStars(place.rating, '1.1rem')}</span>
+              <span className="stars">{renderStars(place.rating, 'detail-star--lg')}</span>
               <strong>{place.rating?.toFixed(1) || '0.0'}</strong>
               <span className="detail-reviews-count">({reviews.length} avaliações)</span>
-              <span className="detail-price">
+              <span className="detail-price price-meter">
                 {Array.from({ length: 4 }, (_, i) => (
-                  <span key={i} style={{ opacity: i < place.priceLevel ? 1 : 0.3 }}>$</span>
+                  <span
+                    key={i}
+                    className={`price-meter__unit${i < place.priceLevel ? '' : ' price-meter__unit--off'}`}
+                  >$</span>
                 ))}
               </span>
-              {user && (
+              {user ? (
                 <button
                   className={`detail-fav-btn${isFav ? ' active' : ''}`}
                   onClick={toggleFavorite}
                 >
                   <i className={`fa-${isFav ? 'solid' : 'regular'} fa-heart`}></i>
                   {isFav ? 'Salvo' : 'Favoritar'}
+                </button>
+              ) : (
+                <button
+                  className="detail-fav-btn"
+                  onClick={() => showToast('Faça login para salvar seus favoritos.', 'info')}
+                  title="Faça login para favoritar"
+                >
+                  <i className="fa-solid fa-lock"></i> Favoritar
                 </button>
               )}
             </div>
@@ -202,6 +247,16 @@ export default function PlaceDetail() {
                         <span className="stars review-stars">
                           {renderStars(review.rating)}
                         </span>
+                        {podeExcluir(review) && (
+                          <button
+                            className="review-delete-btn"
+                            onClick={() => handleDeleteReview(review.id)}
+                            aria-label="Excluir avaliação"
+                            title="Excluir avaliação"
+                          >
+                            <i className="fa-solid fa-trash"></i>
+                          </button>
+                        )}
                       </div>
                       <p className="review-comment">{review.comment}</p>
                     </div>
@@ -238,13 +293,13 @@ export default function PlaceDetail() {
                     />
                   </div>
                   <div className="form-group checkbox-group">
-                    <label>
+                    <label className="checkbox-label">
                       <input
                         type="checkbox"
                         checked={isAnonymous}
                         onChange={e => setIsAnonymous(e.target.checked)}
-                      />{' '}
-                      Publicar de forma anônima
+                      />
+                      <span>Publicar de forma anônima</span>
                     </label>
                   </div>
                   <button type="submit" className="btn btn--primary" disabled={sending}>

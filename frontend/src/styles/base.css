@@ -1,0 +1,67 @@
+/* ============================================================
+   base.css — Reset, variáveis de tema e estilos de elementos
+   Base de toda a aplicação. Deve ser o primeiro a ser carregado.
+   ============================================================ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --primary: #837b9c;
+  --primary-dark: #6a319c;
+  /* Roxo de marca para superfícies com TEXTO BRANCO (contraste AA ≥ 4,5:1) */
+  --accent: #6c4aa0;
+  --accent-dark: #573c84;
+  --dark: #392052;
+  --dark-2: #393952;
+  --white: #ffffff;
+  --light-bg: #f8f9fa;
+  --gray: #392052;
+  --light-gray: #e9ecef;
+  --star: #9441bd;
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  --shadow-hover: 0 8px 30px rgba(0, 0, 0, 0.18);
+  --radius: 12px;
+  --transition: all 0.3s ease;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: var(--light-bg);
+  color: var(--dark);
+  line-height: 1.6;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+ul {
+  list-style: none;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+/* Acessibilidade — contorno de foco visível apenas na navegação por teclado.
+   :focus-visible não dispara em cliques de mouse, evitando contornos indesejados. */
+*:focus {
+  outline: none;
+}
+
+*:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
