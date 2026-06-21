@@ -108,9 +108,13 @@ export default function Home() {
               Restaurantes, bares, cafés e eventos, tudo em um só lugar.
               Explore, avalie e salve seus favoritos.
             </p>
-            <a href="#lugares" className="btn btn--primary hero__cta">
+            <button
+              type="button"
+              className="btn btn--primary hero__cta"
+              onClick={() => document.getElementById('lugares')?.scrollIntoView({ behavior: 'smooth' })}
+            >
               <i className="fa-solid fa-compass"></i> Explorar Agora
-            </a>
+            </button>
           </div>
         </div>
       </section>

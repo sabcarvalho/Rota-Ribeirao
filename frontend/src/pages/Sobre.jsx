@@ -8,8 +8,8 @@ const TEAM = [
 
 const SERVICES = [
   { icon: 'fa-solid fa-map-location-dot', title: 'Serviço de Lugares',        desc: 'Gerencia todos os locais cadastrados — busca, filtro, CRUD. É o coração da plataforma.' },
-  { icon: 'fa-solid fa-star',             title: 'Serviço de Avaliações',      desc: 'Cuida das notas e comentários dos usuários. Usa WebSocket pra atualizar em tempo real, sem precisar recarregar a página.' },
-  { icon: 'fa-solid fa-wand-magic-sparkles', title: 'Serviço de Recomendação', desc: 'Analisa seu histórico e sugere lugares que fazem sentido pra você. Tipo: se você curte bar, ele te manda os bares mais badalados.' },
+  { icon: 'fa-solid fa-star',             title: 'Serviço de Avaliações',      desc: 'Gerencia comentários e avaliações dos usuários, calculando a nota média após cada avaliação.' },
+  { icon: 'fa-solid fa-wand-magic-sparkles', title: 'Serviço de Recomendação', desc: 'Analisa seu histórico e sugere lugares que fazem sentido pra você. Exemplo: se você curte bar, ele te manda os bares mais badalados.' },
   { icon: 'fa-solid fa-gear',             title: 'Módulo de Admin',            desc: 'Área restrita pra gestão interna. Só quem tem acesso de admin consegue cadastrar e remover lugares.' },
 ]
 

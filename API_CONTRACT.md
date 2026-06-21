@@ -9,7 +9,10 @@
 
 | Item | Valor |
 |---|---|
-| URL base (dev) | `http://localhost:8000` |
+| Admin/Auth/Favorites/Crawlers API | `http://localhost:8003` |
+| Places API | `http://localhost:8000` |
+| Reviews API | `http://localhost:8001` |
+| Recommendations API | `http://localhost:8002` |
 | URL base (prod) | definir junto com o time |
 | Formato | JSON (`Content-Type: application/json`) |
 | Autenticação | Bearer Token (JWT) no header `Authorization` |
@@ -62,14 +65,16 @@ Cadastro de novo usuário.
   "name": "João Silva",
   "email": "usuario@email.com",
   "password": "senha123",
-  "active": [opcional] true
+  "active": true
 }
 ```
 
 **Response 201:**
 ```json
 {
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "Bearer",
   "user": {
     "id": 2,
     "name": "João Silva",
@@ -87,6 +92,56 @@ Cadastro de novo usuário.
 ```
 ---
 
+### POST `/auth/refresh`
+Renova o access_token usando o refresh_token.
+
+**Request body:**
+```json
+{
+  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+**Response 200:**
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "Bearer"
+}
+```
+
+**Response 401:**
+```json
+{
+  "detail": "Token de refresh inválido ou expirado"
+}
+```
+
+---
+
+### POST `/auth/give_admin/{email}`
+Promove um usuário a administrador. Requer token de admin.
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Response 200:**
+```json
+{
+  "detail": "Usuário promovido a administrador com sucesso"
+}
+```
+
+**Response 403:**
+```json
+{
+  "detail": "Apenas administradores podem realizar esta operação"
+}
+```
+---
+
 ## Favoritos
 
 ### GET `/favorites`
@@ -96,8 +151,7 @@ Retorna todos os lugares favoritados pelo usuário logado.
 ```json
 [
   {
-    "id": favorito.id,
-    "place_id": lugar_id,
+    "place_id": 1
   }
 ]
 ```
@@ -108,12 +162,9 @@ Adiciona um favorito na tabela Favorito de um dado usuário logado, recebendo o 
 
 **Response 200:**
 ```json
-[
-  {
-    "id": favorito.id,
-    "detail": "Favorito adicionado com sucesso.",
-  }
-]
+{
+  "detail": "Favorito adicionado com sucesso."
+}
 ```
 
 ---
@@ -123,11 +174,27 @@ Deleta um Favorito de um dado usuário logado, referente ao id do local passado.
 
 **Response 200:**
 ```json
-[
-  {
-    "detail": "Lugar removido dos favoritos.",
-  }
-]
+{
+  "detail": "Lugar removido dos favoritos."
+}
+```
+
+---
+
+### DELETE `/favorites/user/{id_user}`
+Deleta todos os favoritos de um usuário. Requer token de admin ou ser o próprio usuário.
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Response 200:**
+```json
+{
+  "detail": "Limpeza concluída. 5 favoritos removidos.",
+  "linhas_afetadas": 5
+}
 ```
 
 ---
@@ -137,15 +204,47 @@ Deleta todos os favoritos vinculados ao id do local passado. Apenas realizada po
 
 **Response 200:**
 ```json
-[
-  {
-    "detail": "Limpeza concluída. {linhas_deletadas} favoritos removidos.",
-    "linhas_afetadas": list, 
-    "linhas_afetadas": linhas_deletadas
-  }
-]
+{
+  "detail": "Limpeza concluída. 12 favoritos removidos.",
+  "linhas_afetadas": 12
+}
 ```
 
+---
+
+## Crawlers
+
+### POST `/crawlers/places/{type_place}`
+Inicia a busca de lugares no Overpass API. Tipos aceitos: `bar`, `restaurante`, `cafe`, `mercado`.
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Response 200:**
+```json
+{
+  "detail": "Busca de lugares iniciada com sucesso."
+}
+```
+
+---
+
+### POST `/crawlers/events`
+Inicia a busca de eventos na Ingresse e Ticketmaster.
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Response 200:**
+```json
+{
+  "detail": "Busca de eventos iniciada com sucesso."
+}
+```
 
 ---
 
@@ -524,7 +623,7 @@ Authorization: Bearer <token>
 {
   "rating": 5,
   "comment": "Lugar incrível, recomendo muito!",
-  "author": "João Silva"
+  "is_anonymous": false
 }
 ```
 
@@ -532,14 +631,120 @@ Authorization: Bearer <token>
 ```json
 {
   "id": 10,
+  "id_lugar": 1,
+  "id_usuario": 42,
   "author": "João Silva",
   "rating": 5,
   "comment": "Lugar incrível, recomendo muito!",
-  "date": "2025-05-27"
+  "date": "2025-05-27T14:22:00Z",
+  "is_anonymous": false
 }
 ```
 
-> Após criar uma review, o backend deve **recalcular e atualizar** o campo `rating` do lugar (média de todas as avaliações).
+> Após criar uma review, o backend deve **recalcular e atualizar** a nota do lugar (média de todas as avaliações).
+
+---
+
+### GET `/places/:id/reviews`
+Retorna a lista de avaliações de um lugar.
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Response 200:**
+```json
+[
+  {
+    "id": 10,
+    "id_lugar": 1,
+    "id_usuario": 42,
+    "author": "João Silva",
+    "rating": 5,
+    "comment": "Lugar incrível, recomendo muito!",
+    "date": "2025-05-27T14:22:00Z",
+    "is_anonymous": false
+  }
+]
+```
+
+---
+
+### GET `/reviews/user/{id_usuario}`
+Retorna a lista de avaliações feitas por um usuário.
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Response 200:**
+```json
+[
+  {
+    "id": 12,
+    "id_lugar": 3,
+    "id_usuario": 42,
+    "author": "João Silva",
+    "rating": 4,
+    "comment": "Ótimo lugar, vale a pena.",
+    "date": "2025-05-28T11:05:00Z",
+    "is_anonymous": false
+  }
+]
+```
+
+---
+
+### GET `/reviews/count`
+Retorna o total de avaliações do sistema.
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Response 200:**
+```json
+{
+  "total": 150
+}
+```
+
+---
+
+### DELETE `/reviews/{id_review}`
+Remove uma avaliação. Permitido para admin ou autor.
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Response 200:**
+```json
+{
+  "detail": "Avaliação removida com sucesso"
+}
+```
+
+---
+
+### DELETE `/internal/reviews/place/{id_place}`
+Rota interna para limpar avaliações ao deletar um lugar. Requer Auth de admin.
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Response 200:**
+```json
+{
+  "detail": "Avaliações do lugar removidas com sucesso"
+}
+```
 
 ---
 
@@ -561,6 +766,42 @@ Authorization: Bearer <token>
 | 403 | Sem permissão (não é admin) |
 | 404 | Não encontrado |
 | 500 | Erro interno do servidor |
+
+---
+
+## Resumo dos Endpoints
+
+| Endpoint | Método | Autenticação | Descrição |
+|---|---|---|---|
+| `/auth/login` | POST | Não | Login de usuário |
+| `/auth/login-form` | POST | Não | Login via formulário OAuth2 |
+| `/auth/refresh` | POST | Não | Renova access_token usando refresh_token |
+| `/auth/register` | POST | Não | Cadastro de novo usuário |
+| `/auth/give_admin/{email}` | POST | Sim | Promove usuário a administrador |
+| `/favorites` | GET | Sim | Lista favoritos do usuário logado |
+| `/favorites/:id_lugar` | POST | Sim | Adiciona favorito |
+| `/favorites/:id_lugar` | DELETE | Sim | Remove favorito do usuário logado |
+| `/favorites/user/{id_user}` | DELETE | Sim | Remove todos os favoritos de um usuário |
+| `/favorites/place/:id_lugar` | DELETE | Sim | Remove todos os favoritos de um local |
+| `/recommendations/user/:id_usuario` | GET | Sim | Retorna recomendações personalizadas |
+| `/places` | GET | Não | Lista lugares ativos e filtrados |
+| `/places/top_rated` | GET | Não | Retorna top lugares por nota |
+| `/places/extract_categories` | POST | Não | Extrai categorias de IDs de lugares |
+| `/admin/places` | GET | Sim | Lista todos os lugares (admin) |
+| `/places` | POST | Sim | Cria um novo lugar (admin) |
+| `/places/:id_lugar` | PATCH | Sim | Atualiza um lugar (admin) |
+| `/places/:id/deactivate` | POST | Sim | Desativa um lugar (admin) |
+| `/places/:id/activate` | POST | Sim | Ativa um lugar (admin) |
+| `/places/:id` | DELETE | Sim | Remove um lugar (admin) |
+| `/internal/places/:id/rating` | PUT | Sim | Atualiza nota e quantidade de reviews de um lugar |
+| `/places/:id/reviews` | POST | Sim | Cria avaliação de lugar |
+| `/places/:id/reviews` | GET | Não | Lista avaliações de um lugar |
+| `/reviews/count` | GET | Sim | Retorna total de avaliações |
+| `/reviews/user/{id_usuario}` | GET | Sim | Lista avaliações de um usuário |
+| `/reviews/{id_review}` | DELETE | Sim | Remove avaliação (admin ou autor) |
+| `/internal/reviews/place/{id_place}` | DELETE | Sim | Limpa avaliações de um local (interno/admin) |
+| `/crawlers/places/{type_place}` | POST | Sim | Inicia busca de lugares via Overpass API |
+| `/crawlers/events` | POST | Sim | Inicia busca de eventos na Ingresse/Ticketmaster |
 
 ---
 
