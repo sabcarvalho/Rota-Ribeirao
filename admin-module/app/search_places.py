@@ -120,22 +120,22 @@ class SearchPlacesOverpass:
         return endereco
 
     def _buscar_imagem(self, nome: str) -> str: 
-        nome_formatado = nome.replace(" ", "+")
-        query = f"{nome_formatado}+ribeirao+preto+{self.categoria_schema}+fachada+estabelecimento"
+        # nome_formatado = nome.replace(" ", "+")
+        # query = f"{nome_formatado}+ribeirao+preto+{self.categoria_schema}+fachada+estabelecimento"
         
-        try:  #procurando imagens no motor de busca DuckDuckGo
-            resultados = list(DDGS().images(
-                query=query, 
-                region="br-br",
-                type_image="photo", 
-                max_results=1, 
-                safesearch="on", 
-                size="Large"
-            ))
-            if resultados:
-                return resultados[0].get("image", self.img_default)
-        except Exception as e:
-            logging.warning(f"Não foi possível obter imagem para {nome}: {e}")
+        # try:  #procurando imagens no motor de busca DuckDuckGo
+        #     resultados = list(DDGS().images(
+        #         query=query, 
+        #         region="br-br",
+        #         type_image="photo", 
+        #         max_results=1, 
+        #         safesearch="on", 
+        #         size="Large"
+        #     ))
+        #     if resultados:
+        #         return resultados[0].get("image", self.img_default)
+        # except Exception as e:
+        #     logging.warning(f"Não foi possível obter imagem para {nome}: {e}")
 
         return self.img_default
     
