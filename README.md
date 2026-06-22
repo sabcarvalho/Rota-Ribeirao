@@ -15,7 +15,7 @@ O projeto segue uma arquitetura **Multitier** e **Microservices**, garantindo o 
 
   - `servico-lugares`: Gestão e busca de estabelecimentos.
   
-  - `servico-avaliacoes`: Gerenciamento de notas e comentários (WebSockets para real-time).
+  - `servico-avaliacoes`: Gerenciamento de notas e comentários.
   
   - `servico-recomendacao`: Algoritmo de sugestão baseado no perfil do usuário.
 
