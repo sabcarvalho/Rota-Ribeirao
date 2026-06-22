@@ -12,7 +12,7 @@ from pathlib import Path
 import requests
 import os
 
-app = FastAPI()
+app = FastAPI(title="Serviço de Lugares - Rota Ribeirão")
 
 # definicao do caminho das variaveis de ambiente quando se roda localmente
 env_path = Path(__file__).resolve().parent / '.env'

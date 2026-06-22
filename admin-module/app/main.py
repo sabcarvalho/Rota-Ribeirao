@@ -6,7 +6,7 @@ from fastapi.security import OAuth2PasswordBearer
 import os
 from pathlib import Path
 
-app = FastAPI()
+app = FastAPI(title="Módulo de Administração - Rota Ribeirão")
 
 #definicao do caminho das variaveis de ambiente quando se roda localmente
 env_path = Path(__file__).resolve().parent / '.env'
